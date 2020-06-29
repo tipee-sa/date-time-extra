@@ -34,6 +34,7 @@ interface IsoInterval
     public function metBy(self $other): bool;
 
     public function overlaps(self $other): bool;
+    public function overlap(self $other): self;
     public function overlappedBy(self $other): bool;
 
     public function finishes(self $other): bool;

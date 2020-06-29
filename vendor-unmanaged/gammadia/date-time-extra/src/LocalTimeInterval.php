@@ -151,29 +151,6 @@ class LocalTimeInterval
 
     }
 
-    /**
-     * Obtains a random time within this interval. </p>
-     *
-     * @return  random time within this interval
-     * @throws  IllegalStateException if this interval is empty or if there is no canonical form
-     * @see     #toCanonical()
-     * @since   5.0
-     */
-    public function random(): LocalTime
-    {
-
-//        ClockInterval interval = this.toCanonical();
-//
-//        if (interval.isEmpty()) {
-//            throw new IllegalStateException("Cannot get random time in an empty interval: " + this);
-//        } else {
-//    long s = interval.getStartAsClockTime().get(PlainTime.NANO_OF_DAY).longValue();
-//            long e = interval.getEndAsClockTime().get(PlainTime.NANO_OF_DAY).longValue();
-//            long randomNum = ThreadLocalRandom.current().nextLong(s, e);
-//            return PlainTime.midnightAtStartOfDay().plus(randomNum, ClockUnit.NANOS);
-//        }
-//
-    }
 
     /**
      * <p>Prints the canonical form of this interval in given basic ISO-8601 style. </p>

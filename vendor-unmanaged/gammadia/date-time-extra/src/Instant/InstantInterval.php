@@ -1,14 +1,48 @@
 <?php
 
-namespace Gammadia\DateTimeExtra;
+namespace Gammadia\DateTimeExtra\Instant;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\Instant;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\TimeZone;
+use Brick\DateTime\ZonedDateTime;
+use Gammadia\DateTimeExtra\ZonedDateTime\ZonedDateTimeInterval;
 
 class InstantInterval
 {
+    /**
+     * @var Instant
+     */
+    private $start;
+
+    /**
+     * @var Instant
+     */
+    private $end;
+
+    private function __construct(Instant $start, Instant $end)
+    {
+        if ($start->isAfter($end)) {
+            throw new \InvalidArgumentException("Start after end: $start / $end");
+        }
+
+        $this->start = $start;
+        $this->end = $end;
+    }
+
+    /**
+     * Creates a finite half-open interval between given time points.
+     *
+     * @param  Instant $start   the zoned datetime of lower boundary (inclusive)
+     * @param  Instant $end     the zoned datetime of upper boundary (exclusive)
+     * @return  self InstantInterval interval
+     */
+    public static function between(Instant $start, Instant $end): self
+    {
+        return new self($start, $end);
+    }
+
     /**
      * <p>Creates an infinite half-open interval since given start. </p>
      */
@@ -126,43 +160,6 @@ class InstantInterval
     }
 
 
-    /**
-     * Obtains a random moment within this interval. </p>
-     *
-     * @return  random moment within this interval
-     * @throws  IllegalStateException if this interval is infinite or empty or if there is no canonical form
-     * @see     #toCanonical()
-     * @since   5.0
-     */
-    public function random(): Instant
-    {
-//
-//        MomentInterval interval = this.toCanonical();
-//
-//        if (interval.isFinite() && !interval.isEmpty()) {
-//            Moment m1 = interval.getStartAsMoment();
-//            Moment m2 = interval.getEndAsMoment();
-//            double factor = MRD;
-//            double d1 = m1.getPosixTime() + m1.getNanosecond() / factor;
-//            double d2 = m2.getPosixTime() + m2.getNanosecond() / factor;
-//            double randomNum = ThreadLocalRandom.current().nextDouble(d1, d2);
-//            long posix = (long) Math.floor(randomNum);
-//            int fraction = (int) (MRD * (randomNum - posix));
-//            Moment random = Moment.of(posix, fraction, TimeScale.POSIX);
-//            if (random.isBefore(m1)) {
-//                random = m1;
-//            } else if (random.isAfterOrEqual(m2)) {
-//    random = m2.minus(1, TimeUnit.NANOSECONDS);
-//}
-//return random;
-//} else {
-//    throw new IllegalStateException("Cannot get random moment in an empty or infinite interval: " + this);
-//}
-
-    }
-
-
-
 
     /**
      * <p>Interpretes given ISO-conforming text as interval. </p>
@@ -181,27 +178,27 @@ class InstantInterval
      *
      * <pre>
      *  System.out.println(
-     *      MomentInterval.parseISO(
+     *      MomentInterval.parse(
      *          &quot;2012-01-01T14:15Z/2014-06-20T16:00Z&quot;));
      *  // output: [2012-01-01T14:15:00Z/2014-06-20T16:00:00Z)
      *
      *  System.out.println(
-     *      MomentInterval.parseISO(
+     *      MomentInterval.parse(
      *          &quot;2012-01-01T14:15Z/08-11T16:00+00:01&quot;));
      *  // output: [2012-01-01T14:15:00Z/2012-08-11T15:59:00Z)
      *
      *  System.out.println(
-     *      MomentInterval.parseISO(
+     *      MomentInterval.parse(
      *          &quot;2012-01-01T14:15Z/16:00&quot;));
      *  // output: [2012-01-01T14:15:00Z/2012-01-01T16:00:00Z)
      *
      *  System.out.println(
-     *      MomentInterval.parseISO(
+     *      MomentInterval.parse(
      *          &quot;2012-01-01T14:15Z/P2DT1H45M&quot;));
      *  // output: [2012-01-01T14:15:00Z/2012-01-03T16:00:00Z)
      *
      *  System.out.println(
-     *      MomentInterval.parseISO(
+     *      MomentInterval.parse(
      *          &quot;2015-01-01T08:45Z/-&quot;));
      *  // output: [2015-01-01T08:45:00Z/+&#x221E;)
      * </pre>
@@ -346,24 +343,7 @@ class InstantInterval
      */
     public function getDuration(): Duration
     {
-//        Moment tsp = this.getTemporalOfOpenEnd();
-//        boolean max = (tsp == null);
-//
-//        if (max) { // max reached
-//            tsp = this.getEnd().getTemporal();
-//        }
-//
-//MachineTime<TimeUnit> result =
-//    MachineTime.ON_POSIX_SCALE.between(
-//        this.getTemporalOfClosedStart(),
-//        tsp);
-//
-//        if (max) {
-//            return result.plus(1, TimeUnit.NANOSECONDS);
-//        }
-//
-//        return result;
-
+        return Duration::between($this->start, $this->end);
     }
 
     /**
