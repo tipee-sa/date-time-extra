@@ -690,24 +690,18 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Compares the boundaries (start and end) and also the time axis
-     * of this and the other interval.
+     * Compares the boundaries (start and end) of this and the other interval.
      */
     public function equals(self $other): bool
     {
-        if (($this->hasInfiniteStart() && !$other->hasInfiniteStart()) ||
-            (!$this->hasInfiniteStart() && $other->hasInfiniteStart()) ||
-            ($this->hasInfiniteEnd() && !$other->hasInfiniteEnd()) ||
-            (!$this->hasInfiniteEnd() && $other->hasInfiniteEnd())) {
+        if ($this->hasInfiniteStart() !== $other->hasInfiniteStart() ||
+            $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()) {
             return false;
         }
 
         return (
-            ($this->hasInfiniteStart() && $other->hasInfiniteStart()) ||
-            $this->getFiniteStart()->isEqualTo($other->getFiniteStart())
-        ) && (
-            ($this->hasInfiniteEnd() && $other->hasInfiniteEnd()) ||
-            $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd())
+            ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart())) &&
+            ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()))
         );
     }
 
