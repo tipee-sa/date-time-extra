@@ -115,7 +115,6 @@ class ZonedDateTimeInterval
             );
     }
 
-
     /**
      * <p>Determines if this interval has finite boundaries. </p>
      */
@@ -139,6 +138,4 @@ class ZonedDateTimeInterval
     {
         return null === $this->end;
     }
-
-
 }

@@ -56,7 +56,9 @@ class LocalDateTimeIntervalTest extends TestCase
 
         self::assertTrue(
             LocalDateTimeInterval::between($ldt1, $ldt2)->atTimeZone($saoPaulo)->equals(
-                ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))));
+                ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))
+            )
+        );
     }
 
     public function testParseLocalDateTimeAndPeriod(): void

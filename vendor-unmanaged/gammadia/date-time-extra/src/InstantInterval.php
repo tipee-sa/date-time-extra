@@ -470,7 +470,6 @@ class InstantInterval
             );
     }
 
-
     /**
      * <p>Determines if this interval has finite boundaries. </p>
      */
@@ -494,5 +493,4 @@ class InstantInterval
     {
         return null === $this->end;
     }
-
 }
