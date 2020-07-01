@@ -35,7 +35,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Creates a finite half-open interval between given time points. </p>
+     * Creates a finite half-open interval between given time points.
      *
      * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
      * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
@@ -48,7 +48,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Creates an infinite half-open interval since given start. </p>
+     * Creates an infinite half-open interval since given start.
      *
      * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
      *
@@ -60,7 +60,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Creates an infinite open interval until given end. </p>
+     * Creates an infinite open interval until given end.
      *
      * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
      *
@@ -72,7 +72,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields the nullable start time point. </p>
+     * Yields the nullable start time point.
      */
     public function getStart(): ?LocalDateTime
     {
@@ -80,7 +80,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields the nullable end time point. </p>
+     * Yields the nullable end time point.
      */
     public function getEnd(): ?LocalDateTime
     {
@@ -88,7 +88,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields the start time point if not null. </p>
+     * Yields the start time point if not null.
      */
     public function getFiniteStart(): LocalDateTime
     {
@@ -100,7 +100,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields the start time point if not null. </p>
+     * Yields the start time point if not null.
      */
     public function getFiniteEnd(): LocalDateTime
     {
@@ -112,7 +112,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields a copy of this interval with given start time. </p>
+     * Yields a copy of this interval with given start time.
      */
     public function withStart(LocalDateTime $t): self
     {
@@ -120,7 +120,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields a copy of this interval with given end time. </p>
+     * Yields a copy of this interval with given end time.
      */
     public function withEnd(LocalDateTime $t): self
     {
@@ -128,7 +128,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields a descriptive string of start and end. </p>
+     * Yields a descriptive string of start and end.
      */
     public function toString(): string
     {
@@ -179,7 +179,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Interpreters a given text as interval. </p>
+     * Interpreters a given text as interval.
      *
      * @param string $text text to be parsed
      */
@@ -235,7 +235,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Moves this interval along the POSIX-axis by given duration or period. </p>
+     * Moves this interval along the POSIX-axis by given duration or period.
      *
      * @param Duration|Period $periodOrDuration
      *
@@ -262,7 +262,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Yields the length of this interval and applies a timezone offset correction . </p>
+     * Yields the length of this interval and applies a timezone offset correction .
      *
      * @return Duration duration including a zonal correction
      */
@@ -276,8 +276,8 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Iterate through every moment which is the result of addition of given duration or period
-     * to start until the end of this interval is reached. </p>
+     * Iterate through every moment which is the result of addition of given duration or period
+     * to start until the end of this interval is reached.
      *
      * @param Period|Duration $periodOrDuration
      *
@@ -304,7 +304,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval is empty. </p>
+     * Determines if this interval is empty.
      */
     public function isEmpty(): bool
     {
@@ -316,7 +316,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Is this interval before the given time point? </p>
+     * Is this interval before the given time point?
      */
     public function isBefore(LocalDateTime $t): bool
     {
@@ -328,7 +328,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Is this interval before the other one? </p>
+     * Is this interval before the other one?
      */
     public function isBeforeInterval(self $other): bool
     {
@@ -343,7 +343,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Is this interval after the given time point? </p>
+     * Is this interval after the given time point?
      */
     public function isAfter(LocalDateTime $t): bool
     {
@@ -355,7 +355,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Is this interval after the other one? </p>
+     * Is this interval after the other one?
      */
     public function isAfterInterval(self $other): bool
     {
@@ -363,7 +363,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Queries if given time point belongs to this interval. </p>
+     * Queries if given time point belongs to this interval.
      */
     public function contains(LocalDateTime $t): bool
     {
@@ -387,7 +387,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Does this interval contain the other one? </p>
+     * Does this interval contain the other one?
      */
     public function containsInterval(self $other): bool
     {
@@ -419,8 +419,8 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Does this interval precede the other one such that
-     * there is a gap between? </p>
+     * ALLEN-relation: Does this interval precede the other one such that
+     * there is a gap between?
      */
     public function precedes(self $other): bool
     {
@@ -439,7 +439,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Equivalent to $other->precedes($this). </p>
+     * ALLEN-relation: Equivalent to $other->precedes($this).
      */
     public function precededBy(self $other): bool
     {
@@ -447,8 +447,8 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Does this interval precede the other one such that
-     * there is no gap between? </p>
+     * ALLEN-relation: Does this interval precede the other one such that
+     * there is no gap between?
      */
     public function meets(self $other): bool
     {
@@ -460,7 +460,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Equivalent to $other->meets($this). </p>
+     * ALLEN-relation: Equivalent to $other->meets($this).
      */
     public function metBy(self $other): bool
     {
@@ -468,9 +468,9 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Does this interval finish the other one such that
+     * ALLEN-relation: Does this interval finish the other one such that
      * both end time points are equal and the start of this interval is after
-     * the start of the other one? </p>
+     * the start of the other one?
      */
     public function finishes(self $other): bool
     {
@@ -495,7 +495,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Equivalent to $other->finishes($this). </p>
+     * ALLEN-relation: Equivalent to $other->finishes($this).
      */
     public function finishedBy(self $other): bool
     {
@@ -503,9 +503,9 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Does this interval start the other one such that both
+     * ALLEN-relation: Does this interval start the other one such that both
      * start time points are equal and the end of this interval is before the
-     * end of the other one? </p>
+     * end of the other one?
      */
     public function starts(self $other): bool
     {
@@ -530,7 +530,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Equivalent to $other->starts($this). </p>
+     * ALLEN-relation: Equivalent to $other->starts($this).
      */
     public function startedBy(self $other): bool
     {
@@ -538,9 +538,9 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Does this interval enclose the other one such that
+     * ALLEN-relation: Does this interval enclose the other one such that
      * this start is before the start of the other one and this end is after
-     * the end of the other one? </p>
+     * the end of the other one?
      */
     public function encloses(self $other): bool
     {
@@ -574,7 +574,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Equivalent to $other->encloses($this). </p>
+     * ALLEN-relation: Equivalent to $other->encloses($this).
      */
     public function enclosedBy(self $other): bool
     {
@@ -582,9 +582,9 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Does this interval overlaps the other one such that
+     * ALLEN-relation: Does this interval overlaps the other one such that
      * the start of this interval is still before the start of the other
-     * one? </p>
+     * one?
      */
     public function overlaps(self $other): bool
     {
@@ -608,7 +608,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>ALLEN-relation: Equivalent to $other->overlaps($this). </p>
+     * ALLEN-relation: Equivalent to $other->overlaps($this).
      */
     public function overlappedBy(self $other): bool
     {
@@ -616,7 +616,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Queries if this interval intersects the other one such that there is at least one common time point. </p>
+     * Queries if this interval intersects the other one such that there is at least one common time point.
      *
      * @param self $other another interval which might have an intersection with this interval
      *
@@ -637,9 +637,9 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Queries if this interval abuts the other one such that there is neither any overlap nor any gap between. </p>
+     * Queries if this interval abuts the other one such that there is neither any overlap nor any gap between.
      *
-     * <p>Equivalent to the expression {@code this.meets(other) ^ this.metBy(other)}. Empty intervals never abut. </p>
+     * Equivalent to the expression {@code this.meets(other) ^ this.metBy(other)}. Empty intervals never abut.
      */
     public function abuts(self $other): bool
     {
@@ -647,8 +647,8 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Changes this interval to an empty interval with the same
-     * start anchor. </p>
+     * Changes this interval to an empty interval with the same
+     * start anchor.
      *
      * @return self empty interval with same start (anchor always inclusive)
      */
@@ -662,7 +662,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Obtains the intersection of this interval and other one if present. </p>
+     * Obtains the intersection of this interval and other one if present.
      *
      * @param self $other another interval which might have an intersection with this interval
      *
@@ -690,8 +690,8 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Compares the boundaries (start and end) and also the time axis
-     * of this and the other interval. </p>
+     * Compares the boundaries (start and end) and also the time axis
+     * of this and the other interval.
      */
     public function equals(self $other): bool
     {
@@ -712,7 +712,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval has finite boundaries. </p>
+     * Determines if this interval has finite boundaries.
      */
     public function isFinite(): bool
     {
@@ -720,7 +720,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval has infinite start boundary. </p>
+     * Determines if this interval has infinite start boundary.
      */
     public function hasInfiniteStart(): bool
     {
@@ -728,7 +728,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval has infinite end boundary. </p>
+     * Determines if this interval has infinite end boundary.
      */
     public function hasInfiniteEnd(): bool
     {
