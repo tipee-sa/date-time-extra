@@ -699,10 +699,10 @@ class LocalDateTimeInterval
             return false;
         }
 
-        return (
+        return
             ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart())) &&
             ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()))
-        );
+        ;
     }
 
     /**

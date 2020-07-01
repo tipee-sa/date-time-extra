@@ -511,25 +511,17 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertNull($this->interval('2013|----')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2013')));
 
-        self::assertTrue(
-            $this->interval('2010|2011')
-                ->equals($this->interval('2009|2011')->findIntersection($this->interval('2010|2013')))
-        );
+        $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
+        self::assertTrue($intersection && $this->interval('2010|2011')->equals($intersection));
 
-        self::assertTrue(
-            $this->interval('2010|2011')
-                ->equals($this->interval('2010|2011')->findIntersection($this->interval('2010|2013')))
-        );
+        $intersection2 = $this->interval('2010|2011')->findIntersection($this->interval('2010|2013'));
+        self::assertTrue($intersection2 && $this->interval('2010|2011')->equals($intersection2));
 
-        self::assertTrue(
-            $this->interval('2011|2012')
-                ->equals($this->interval('2011|2012')->findIntersection($this->interval('2010|2013')))
-        );
+        $intersection3 = $this->interval('2011|2012')->findIntersection($this->interval('2010|2013'));
+        self::assertTrue($intersection3 && $this->interval('2011|2012')->equals($intersection3));
 
-        self::assertTrue(
-            $this->interval('2011|2013')
-                ->equals($this->interval('2011|2014')->findIntersection($this->interval('2010|2013')))
-        );
+        $intersection4 = $this->interval('2011|2014')->findIntersection($this->interval('2010|2013'));
+        self::assertTrue($intersection4 && $this->interval('2011|2013')->equals($intersection4));
     }
 
     public function testFinishes(): void
