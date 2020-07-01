@@ -1,6 +1,6 @@
 <?php
 
-namespace Gammadia\DateTimeExtra\Instant;
+namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\Instant;

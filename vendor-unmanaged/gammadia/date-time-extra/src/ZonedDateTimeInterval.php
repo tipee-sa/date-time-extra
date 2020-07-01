@@ -1,10 +1,9 @@
 <?php
 
-namespace Gammadia\DateTimeExtra\ZonedDateTime;
+namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\ZonedDateTime;
-use Gammadia\DateTimeExtra\Instant\InstantInterval;
 
 //todo voir InstantInterval.php
 class ZonedDateTimeInterval

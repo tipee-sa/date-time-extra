@@ -1,6 +1,6 @@
 <?php
 
-namespace Gammadia\DateTimeExtra\Share;
+namespace Gammadia\DateTimeExtra;
 
 class IntervalParseException extends \RuntimeException
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Gammadia\DateTimeExtra\Test\Unit\LocalDateTime;
+namespace Gammadia\DateTimeExtra\Test\Unit;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\LocalDateTime;
@@ -8,11 +8,10 @@ use Brick\DateTime\Parser\DateTimeParseException;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
-use Gammadia\DateTimeExtra\Instant\InstantInterval;
-use Gammadia\DateTimeExtra\LocalDateTime\Converter;
-use Gammadia\DateTimeExtra\LocalDateTime\LocalDateTimeInterval;
-use Gammadia\DateTimeExtra\Share\IntervalParseException;
-use Gammadia\DateTimeExtra\ZonedDateTime\ZonedDateTimeInterval;
+use Gammadia\DateTimeExtra\InstantInterval;
+use Gammadia\DateTimeExtra\LocalDateTimeInterval;
+use Gammadia\DateTimeExtra\IntervalParseException;
+use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
 
 class LocalDateTimeIntervalTest extends TestCase
@@ -23,7 +22,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $end = LocalDateTime::parse('2007-02-14T10:15:30');
         $interval = LocalDateTimeInterval::between($start, $end);
 
-        self::assertEquals('2007-01-01T10:15:30/2007-02-14T10:15:30', $interval->toIsoString());
+        self::assertEquals('2007-01-01T10:15:30/2007-02-14T10:15:30', $interval->toString());
     }
 
     public function testToIsoStringInfinity(): void
@@ -31,8 +30,8 @@ class LocalDateTimeIntervalTest extends TestCase
         $since = LocalDateTimeInterval::since(LocalDateTime::of(2016, 2, 28, 13, 20));
         $until = LocalDateTimeInterval::until(LocalDateTime::of(2016, 2, 28, 13, 20));
 
-        self::assertEquals('2016-02-28T13:20/-', $since->toIsoString());
-        self::assertEquals('-/2016-02-28T13:20', $until->toIsoString());
+        self::assertEquals('2016-02-28T13:20/-', $since->toString());
+        self::assertEquals('-/2016-02-28T13:20', $until->toString());
     }
 
     public function testInUTC(): void
@@ -40,8 +39,8 @@ class LocalDateTimeIntervalTest extends TestCase
         $t1 = LocalDateTime::of(2014, 2, 27, 0, 0);
         $t2 = LocalDateTime::of(2014, 5, 14, 23, 59, 59);
 
-        $m1 = Converter::toInstant($t1, TimeZoneOffset::utc());
-        $m2 = Converter::toInstant($t2, TimeZoneOffset::utc());
+        $m1 = $t1->atTimeZone(TimeZoneOffset::utc())->getInstant();
+        $m2 = $t2->atTimeZone(TimeZoneOffset::utc())->getInstant();
 
         self::assertEquals(LocalDateTimeInterval::between($t1, $t2)->atUTC(), InstantInterval::between($m1, $m2));
     }
@@ -183,7 +182,7 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         //Duration
         self::assertEquals(
-            LocalDateTimeInterval::parse('2012-04-10T00:00:00/2012-12-31T23:59:59')->move(Duration::parse('PT1S')),
+            LocalDateTimeInterval::parse('2012-04-10T00:00:00/2012-12-31T23:59:59')->move(Duration::parse('+PT1S')),
             LocalDateTimeInterval::parse('2012-04-10T00:00:01/2013-01-01T00:00:00')
         );
         self::assertEquals(
@@ -243,29 +242,29 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
-     * @dataProvider streamProvider
+     * @dataProvider iterateProvider
      */
-    public function testStream(int $expectedCount, string $strPeriod, string $strDuration): void
+    public function testIterate(int $expectedCount, string $strPeriod, string $strDuration): void
     {
         $interval = LocalDateTimeInterval::parse('2016-01-01T00:00/2016-01-31T00:00');
 
         self::assertCount(
             $expectedCount,
             iterator_to_array(
-                $interval->stream(
-                    $strPeriod ? Period::parse($strPeriod) : null,
-                    $strDuration ? Duration::parse($strDuration) : null
+                $interval->iterate(
+                    $strPeriod ? Period::parse($strPeriod) : Duration::parse($strDuration)
                 )
             )
         );
     }
 
-    public function streamProvider(): iterable
+    public function iterateProvider(): iterable
     {
-        yield [30, 'P1D', 'PT1S'];
-        yield [30, 'P1D', 'PT1M'];
-        yield [29, 'P1D', 'PT1H'];
-        yield [12, 'P1D', 'P1DT12H'];
+        yield [30, 'P1D', ''];
+        yield [30, '', 'P1D'];
+        yield [720, '', 'PT1H'];
+        yield [29, '', 'PT25H'];
+        yield [20, '', 'P1DT12H'];
         yield [30, '', 'P1D'];
         yield [30, '', 'PT24H'];
         yield [30, 'P1D', ''];
@@ -328,16 +327,26 @@ class LocalDateTimeIntervalTest extends TestCase
     private function interval(string $i, string $strDuration = ''): LocalDateTimeInterval
     {
         $intervals = [
+            '----|2009' => LocalDateTimeInterval::until(LocalDateTime::of(2009, 1, 1, 0, 0, 0)),
             '----|2010' => LocalDateTimeInterval::until(LocalDateTime::of(2010, 1, 1, 0, 0, 0)),
             '----|2011' => LocalDateTimeInterval::until(LocalDateTime::of(2011, 1, 1, 0, 0, 0)),
             '----|2012' => LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1, 0, 0, 0)),
             '----|2013' => LocalDateTimeInterval::until(LocalDateTime::of(2013, 1, 1, 0, 0, 0)),
+            '----|2014' => LocalDateTimeInterval::until(LocalDateTime::of(2014, 1, 1, 0, 0, 0)),
+            '2009|2010' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2010-01-01T00:00:00'),
+            '2009|2011' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2011-01-01T00:00:00'),
+            '2009|2012' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2012-01-01T00:00:00'),
+            '2009|2013' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2013-01-01T00:00:00'),
             '2010|2011' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2011-01-01T00:00:00'),
             '2010|2012' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2012-01-01T00:00:00'),
             '2010|2013' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2011|2011' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2011-01-01T00:00:00'),
             '2011|2012' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2012-01-01T00:00:00'),
+            '2011|2014' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2014-01-01T00:00:00'),
             '2011|2013' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2013-01-01T00:00:00'),
             '2012|2013' => LocalDateTimeInterval::parse('2012-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2013|2014' => LocalDateTimeInterval::parse('2013-01-01T00:00:00/2014-01-01T00:00:00'),
+            '2009|----' => LocalDateTimeInterval::since(LocalDateTime::of(2009, 1, 1, 0, 0, 0)),
             '2010|----' => LocalDateTimeInterval::since(LocalDateTime::of(2010, 1, 1, 0, 0, 0)),
             '2011|----' => LocalDateTimeInterval::since(LocalDateTime::of(2011, 1, 1, 0, 0, 0)),
             '2012|----' => LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1, 0, 0, 0)),
@@ -418,7 +427,7 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertTrue($_this->interval('2011|2013')->containsInterval($this->interval('2011|2012')));
         self::assertTrue($_this->interval('2011|2012')->containsInterval($this->interval('2011|2012')));
         self::assertFalse($this->interval('2012|2013')->containsInterval($this->interval('2011|2012')));
-
+        self::assertFalse($this->interval('----|2012')->containsInterval($this->interval('----|2011')));
         self::assertTrue($_this->interval('----|2012')->containsInterval($this->interval('2010|2011')));
         self::assertTrue($_this->interval('----|2011')->containsInterval($this->interval('2010|2011')));
         self::assertTrue($_this->interval('2010|----')->containsInterval($this->interval('2010|2011')));
@@ -429,7 +438,7 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         $_this = $this;
         self::assertTrue($_this->interval('----|2010')->precedes($this->interval('2011|2012')));
-        self::assertTrue($_this->interval('2010|2011')->precedes($this->interval('2011|2012', 'PT1S')));
+        self::assertTrue($_this->interval('2010|2011')->precedes($this->interval('2011|2012', '+PT1S')));
         self::assertFalse($this->interval('2010|2011')->precedes($this->interval('2011|2012')));
         self::assertFalse($this->interval('2011|2012')->precedes($this->interval('2011|2012')));
         self::assertFalse($this->interval('2012|----')->precedes($this->interval('2011|2012')));
@@ -450,7 +459,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $_this = $this;
         self::assertTrue($_this->interval('----|2011')->meets($this->interval('2011|2012')));
         self::assertTrue($_this->interval('2010|2011')->meets($this->interval('2011|2012')));
-        self::assertFalse($this->interval('2010|2011')->meets($this->interval('2011|2012', 'PT1S')));
+        self::assertFalse($this->interval('2010|2011')->meets($this->interval('2011|2012', '+PT1S')));
         self::assertFalse($this->interval('2011|2012')->meets($this->interval('2011|2012')));
         self::assertFalse($this->interval('2012|----')->meets($this->interval('2011|2012')));
     }
@@ -458,10 +467,214 @@ class LocalDateTimeIntervalTest extends TestCase
     public function testMetBy(): void
     {
         $_this = $this;
-        self::assertTrue($this->interval('2011|2012')->metBy($_this->interval('----|2011')));
-        self::assertTrue($this->interval('2011|2012')->metBy($_this->interval('2010|2011')));
+        self::assertTrue($_this->interval('2011|2012')->metBy($this->interval('----|2011')));
+        self::assertTrue($_this->interval('2011|2012')->metBy($this->interval('2010|2011')));
         self::assertFalse($this->interval('2011|2012')->metBy($this->interval('2010|2011', '-PT1S')));
         self::assertFalse($this->interval('2011|2012')->metBy($this->interval('2011|2012')));
         self::assertFalse($this->interval('2011|2012')->metBy($this->interval('2012|----')));
     }
+
+    public function testIntersects(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('----|2010')->intersects($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('----|2010')->intersects($this->interval('2010|2013', '-PT1S')));
+        self::assertFalse($this->interval('2009|2010')->intersects($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('2009|2010')->intersects($this->interval('2010|2013', '-PT1S')));
+        self::assertTrue($_this->interval('2010|2011')->intersects($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('2011|2012')->intersects($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('2011|2014')->intersects($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2013|2014')->intersects($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('2013|2014')->intersects($this->interval('2010|2013', '+PT1S')));
+        self::assertFalse($this->interval('2013|----')->intersects($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('2013|----')->intersects($this->interval('2010|2013', '+PT1S')));
+    }
+
+
+    public function testFindIntersection(): void
+    {
+        self::assertEquals(null, $this->interval('2009|2010')->findIntersection($this->interval('2010|2013')));
+        self::assertEquals(null, $this->interval('2013|2014')->findIntersection($this->interval('2010|2013')));
+        self::assertEquals(null, $this->interval('2013|----')->findIntersection($this->interval('2010|2013')));
+        self::assertEquals(null, $this->interval('----|2010')->findIntersection($this->interval('2010|2013')));
+
+        self::assertEquals(
+            $this->interval('2010|2011'),
+            $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'))
+        );
+
+        self::assertEquals(
+            $this->interval('2010|2011'),
+            $this->interval('2010|2011')->findIntersection($this->interval('2010|2013'))
+        );
+
+        self::assertEquals(
+            $this->interval('2011|2012'),
+            $this->interval('2011|2012')->findIntersection($this->interval('2010|2013'))
+        );
+
+        self::assertEquals(
+            $this->interval('2011|2013'),
+            $this->interval('2011|2014')->findIntersection($this->interval('2010|2013'))
+        );
+    }
+
+    public function testFinishes(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('----|2013')->finishes($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2009|2013')->finishes($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|2013')->finishes($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|2011')->finishes($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|----')->finishes($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|----')->finishes($this->interval('2010|----')));
+        self::assertTrue($_this->interval('2013|----')->finishes($this->interval('2010|----')));
+        self::assertTrue($_this->interval('2011|2013')->finishes($this->interval('2010|2013')));
+        self::assertTrue($_this->interval('2011|2013')->finishes($this->interval('----|2013')));
+    }
+
+    public function testFinishedBy(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('2010|2013')->finishedBy($this->interval('----|2013')));
+        self::assertFalse($this->interval('2010|2013')->finishedBy($this->interval('2009|2013')));
+        self::assertFalse($this->interval('2010|2013')->finishedBy($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|2013')->finishedBy($this->interval('2010|2011')));
+        self::assertFalse($this->interval('2010|2013')->finishedBy($this->interval('2010|----')));
+        self::assertFalse($this->interval('2010|----')->finishedBy($this->interval('2010|----')));
+        self::assertTrue($_this->interval('2010|2013')->finishedBy($this->interval('2011|2013')));
+        self::assertTrue($_this->interval('----|2013')->finishedBy($this->interval('2011|2013')));
+    }
+
+    public function testStarts(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('2011|----')->starts($this->interval('2011|2013')));
+        self::assertFalse($this->interval('2011|2014')->starts($this->interval('2011|2013')));
+        self::assertFalse($this->interval('2011|2013')->starts($this->interval('2011|2013')));
+        self::assertTrue($_this->interval('2011|2012')->starts($this->interval('2011|2013')));
+        self::assertTrue($_this->interval('2011|2012')->starts($this->interval('2011|----')));
+        self::assertFalse($this->interval('2011|----')->starts($this->interval('2011|----')));
+        self::assertTrue($_this->interval('----|2010')->starts($this->interval('----|2013')));
+        self::assertFalse($this->interval('----|2013')->starts($this->interval('----|2013')));
+    }
+
+    public function testStartedBy(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('2011|2013')->startedBy($this->interval('2011|----')));
+        self::assertFalse($this->interval('2011|2013')->startedBy($this->interval('2011|2014')));
+        self::assertFalse($this->interval('2011|2013')->startedBy($this->interval('2011|2013')));
+        self::assertTrue($_this->interval('2011|2013')->startedBy($this->interval('2011|2012')));
+        self::assertTrue($_this->interval('2011|----')->startedBy($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2011|----')->startedBy($this->interval('2011|----')));
+        self::assertTrue($_this->interval('----|2013')->startedBy($this->interval('----|2010')));
+        self::assertFalse($this->interval('----|2013')->startedBy($this->interval('----|2013')));
+    }
+
+    public function testEncloses(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('2010|2011')->encloses($this->interval('2011|2012')));
+        self::assertTrue($_this->interval('2010|2013')->encloses($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2010|2012')->encloses($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2011|2013')->encloses($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2011|2012')->encloses($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2012|2013')->encloses($this->interval('2011|2012')));
+        self::assertFalse($this->interval('----|2012')->encloses($this->interval('----|2011')));
+        self::assertTrue($_this->interval('----|2012')->encloses($this->interval('2010|2011')));
+        self::assertFalse($this->interval('----|2011')->encloses($this->interval('2010|2011')));
+        self::assertFalse($this->interval('2010|----')->encloses($this->interval('2010|2011')));
+        self::assertTrue($_this->interval('2010|----')->encloses($this->interval('2010|2011', '+PT1S')));
+        self::assertTrue($_this->interval('2009|----')->encloses($this->interval('2010|2011')));
+    }
+
+    public function testEnclosedBy(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('2011|2012')->enclosedBy($this->interval('2010|2011')));
+        self::assertTrue($_this->interval('2011|2012')->enclosedBy($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2011|2012')->enclosedBy($this->interval('2010|2012')));
+        self::assertFalse($this->interval('2011|2012')->enclosedBy($this->interval('2011|2013')));
+        self::assertFalse($this->interval('2011|2012')->enclosedBy($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2011|2012')->enclosedBy($this->interval('2012|2013')));
+        self::assertFalse($this->interval('----|2011')->enclosedBy($this->interval('----|2012')));
+        self::assertTrue($_this->interval('2010|2011')->enclosedBy($this->interval('----|2012')));
+        self::assertFalse($this->interval('2010|2011')->enclosedBy($this->interval('----|2011')));
+        self::assertFalse($this->interval('2010|2011')->enclosedBy($this->interval('2010|----')));
+        self::assertTrue($_this->interval('2010|2011')->enclosedBy($this->interval('2009|----')));
+    }
+
+    public function testOverlaps(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('----|2010')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2009|2010')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2013|2014')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|2011')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2011|2012')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2011|2014')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2013|----')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2013|2014')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2013|----')->overlaps($this->interval('2010|2013')));
+
+        self::assertTrue($_this->interval('----|2010')->overlaps($this->interval('2010|2013', '-PT1S')));
+        self::assertTrue($_this->interval('2009|2010')->overlaps($this->interval('2010|2013', '-PT1S')));
+    }
+
+    public function testOverlappedBy(): void
+    {
+        $_this = $this;
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('----|2010')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2009|2010')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|2014')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2010|2011')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2011|2014')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|----')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|2014')));
+        self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|----')));
+
+        self::assertTrue($_this->interval('2010|2013', '-PT1S')->overlappedBy($this->interval('----|2010')));
+        self::assertTrue($_this->interval('2010|2013', '-PT1S')->overlappedBy($this->interval('2009|2010')));
+    }
+
+    public function testAbuts(): void
+    {
+        $_this = $this;
+        self::assertTrue($_this->interval('----|2011')->abuts($this->interval('2011|2012')));
+        self::assertTrue($_this->interval('2010|2011')->abuts($this->interval('2011|2012')));
+        self::assertFalse($this->interval('2010|2011')->abuts($this->interval('2011|2012', '+PT1S')));
+        self::assertFalse($this->interval('2011|2012')->abuts($this->interval('2011|2012')));
+        self::assertTrue($_this->interval('2012|----')->abuts($this->interval('2011|2012')));
+        self::assertTrue($_this->interval('2012|2013')->abuts($this->interval('2011|2012')));
+        self::assertTrue($_this->interval('2012|----')->abuts($this->interval('2011|2012')));
+    }
+
+    public function testCollapse(): void
+    {
+        self::assertEquals($this->interval('2011|2011'), $this->interval('2011|2012')->collapse());
+        self::assertEquals($this->interval('2011|2011'), $this->interval('2011|----')->collapse());
+        self::assertEquals($this->interval('2011|2011'), $this->interval('2011|2011')->collapse());
+    }
+
+    public function testEquals(): void
+    {
+        self::assertTrue($this->interval('----|2011')->equals($this->interval('----|2011')));
+        self::assertTrue($this->interval('2010|2011')->equals($this->interval('2010|2011')));
+        self::assertTrue($this->interval('2012|----')->equals($this->interval('2012|----')));
+        self::assertTrue($this->interval('2012|2013')->equals($this->interval('2012|2013')));
+        self::assertTrue($this->interval('2011|2011')->equals($this->interval('2011|2011')));
+        self::assertTrue($this->interval('2012|----')->equals($this->interval('2012|----')));
+
+        self::assertFalse($this->interval('----|2011')->equals($this->interval('2011|2011')));
+        self::assertFalse($this->interval('2012|----')->equals($this->interval('2012|2013')));
+        self::assertFalse($this->interval('2010|2011')->equals($this->interval('2010|----')));
+        self::assertFalse($this->interval('2012|2013')->equals($this->interval('----|2011')));
+
+        self::assertFalse($this->interval('2012|2013')->equals($this->interval('2011|2013')));
+        self::assertFalse($this->interval('----|2013')->equals($this->interval('----|2012')));
+        self::assertFalse($this->interval('2012|----')->equals($this->interval('2013|----')));
+    }
+
 }
