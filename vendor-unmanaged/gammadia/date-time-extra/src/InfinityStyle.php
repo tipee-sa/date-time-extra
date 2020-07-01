@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Gammadia\DateTimeExtra;
 
 class InfinityStyle
 {
-    const SYMBOL = '-';
+    public const SYMBOL = '-';
 }

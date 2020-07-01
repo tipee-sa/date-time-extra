@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
@@ -9,7 +11,6 @@ use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
 use Symfony\Component\String\UnicodeString;
 use Traversable;
-use Webmozart\Assert\Assert;
 
 class LocalDateTimeInterval
 {
@@ -26,7 +27,7 @@ class LocalDateTimeInterval
     private function __construct(?LocalDateTime $start, ?LocalDateTime $end)
     {
         if ($start && $end && $start->isAfter($end)) {
-            throw new \InvalidArgumentException("Start after end: $start / $end");
+            throw new \InvalidArgumentException("Start after end: ${start} / ${end}");
         }
 
         $this->start = $start;
@@ -38,6 +39,7 @@ class LocalDateTimeInterval
      *
      * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
      * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
+     *
      * @return  self LocalDateTimeInterval interval
      */
     public static function between(?LocalDateTime $start, ?LocalDateTime $end): self
@@ -49,6 +51,7 @@ class LocalDateTimeInterval
      * <p>Creates an infinite half-open interval since given start. </p>
      *
      * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
+     *
      * @return self new local datetime interval
      */
     public static function since(LocalDateTime $start): self
@@ -60,6 +63,7 @@ class LocalDateTimeInterval
      * <p>Creates an infinite open interval until given end. </p>
      *
      * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
+     *
      * @return self new timestamp interval
      */
     public static function until(LocalDateTime $end): self
@@ -91,6 +95,7 @@ class LocalDateTimeInterval
         if (null === $this->start) {
             throw new \RuntimeException('getFiniteStart() method can not return null');
         }
+
         return $this->start;
     }
 
@@ -102,6 +107,7 @@ class LocalDateTimeInterval
         if (null === $this->end) {
             throw new \RuntimeException('getFiniteEnd() method can not return null');
         }
+
         return $this->end;
     }
 
@@ -152,8 +158,8 @@ class LocalDateTimeInterval
     public function atUTC(): InstantInterval
     {
         return InstantInterval::between(
-            $this->start->atTimeZone(TimeZoneOffset::utc())->getInstant(),
-            $this->end->atTimeZone(TimeZoneOffset::utc())->getInstant()
+            $this->start ? $this->start->atTimeZone(TimeZoneOffset::utc())->getInstant() : null,
+            $this->end ? $this->end->atTimeZone(TimeZoneOffset::utc())->getInstant() : null
         );
     }
 
@@ -161,13 +167,14 @@ class LocalDateTimeInterval
      * Combines this local timestamp interval with given timezone to a ZonedInterval.
      *
      * @param TimeZoneRegion $timezoneId timezone id
+     *
      * @return ZonedDateTimeInterval zoned datetime interval interpreted in given timezone
      */
     public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
     {
         return ZonedDateTimeInterval::between(
-            $this->start->atTimeZone($timezoneId),
-            $this->end->atTimeZone($timezoneId)
+            $this->start ? $this->start->atTimeZone($timezoneId) : null,
+            $this->end ? $this->end->atTimeZone($timezoneId) : null
         );
     }
 
@@ -178,8 +185,6 @@ class LocalDateTimeInterval
      */
     public static function parse(string $text): self
     {
-        Assert::notEmpty($text);
-
         [$startStr, $endStr] = explode('/', trim($text), 2);
 
         $startStr = new UnicodeString($startStr);
@@ -205,14 +210,14 @@ class LocalDateTimeInterval
         if ($startsWithInfinity) {
             $ldt1 = null;
         } elseif ($startsWithPeriod) {
-            $ldt2 = LocalDateTime::parse($endStr);
+            $ldt2 = LocalDateTime::parse($endStr->toString());
             $ldt1 = $startStr->indexOf('T')
-                ? $ldt2->minusDuration(Duration::parse($startStr))
-                : $ldt2->minusPeriod(Period::parse($startStr));
+                ? $ldt2->minusDuration(Duration::parse($startStr->toString()))
+                : $ldt2->minusPeriod(Period::parse($startStr->toString()));
 
             return self::between($ldt1, $ldt2);
         } else {
-            $ldt1 = LocalDateTime::parse($startStr);
+            $ldt1 = LocalDateTime::parse($startStr->toString());
         }
 
         //END
@@ -220,10 +225,10 @@ class LocalDateTimeInterval
             $ldt2 = null;
         } elseif ($endsWithPeriod) {
             $ldt2 = $endStr->indexOf('T')
-                ? $ldt1->plusDuration(Duration::parse($endStr))
-                : $ldt1->plusPeriod(Period::parse($endStr));
+                ? ($ldt1 ? $ldt1->plusDuration(Duration::parse($endStr->toString())) : null)
+                : ($ldt1 ? $ldt1->plusPeriod(Period::parse($endStr->toString())) : null);
         } else {
-            $ldt2 = LocalDateTime::parse($endStr);
+            $ldt2 = LocalDateTime::parse($endStr->toString());
         }
 
         return self::between($ldt1, $ldt2);
@@ -232,22 +237,24 @@ class LocalDateTimeInterval
     /**
      * <p>Moves this interval along the POSIX-axis by given duration or period. </p>
      *
-     * @param Duration|Period $durationOrPeriod
+     * @param Duration|Period $periodOrDuration
+     *
      * @return self moved copy of this interval
      */
-    public function move($durationOrPeriod): self
+    public function move($periodOrDuration): self
     {
-        if ($durationOrPeriod instanceof Duration) {
+        /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
+        if ($periodOrDuration instanceof Period) {
             return new self(
-                $this->start->plusDuration($durationOrPeriod),
-                $this->end->plusDuration($durationOrPeriod)
+                $this->start ? $this->start->plusPeriod($periodOrDuration) : null,
+                $this->end ? $this->end->plusPeriod($periodOrDuration) : null
             );
         }
 
-        if ($durationOrPeriod instanceof Period) {
+        if ($periodOrDuration instanceof Duration) {
             return new self(
-                $this->start->plusPeriod($durationOrPeriod),
-                $this->end->plusPeriod($durationOrPeriod)
+                $this->start ? $this->start->plusDuration($periodOrDuration) : null,
+                $this->end ? $this->end->plusDuration($periodOrDuration) : null
             );
         }
 
@@ -273,19 +280,21 @@ class LocalDateTimeInterval
      * to start until the end of this interval is reached. </p>
      *
      * @param Period|Duration $periodOrDuration
-     * @return Traversable
+     *
+     * @return Traversable<LocalDateTime>
      */
     public function iterate($periodOrDuration): Traversable
     {
+        /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
         if (!$this->isFinite()) {
-            throw new \RuntimeException("Streaming is not supported for infinite intervals.");
+            throw new \RuntimeException('Streaming is not supported for infinite intervals.');
         }
 
-        if (!$periodOrDuration instanceof Period && !$periodOrDuration instanceof Duration) {
-            throw new \RuntimeException("Instance of Duration or Period expected.");
+        if (!($periodOrDuration instanceof Period || $periodOrDuration instanceof Duration)) {
+            throw new \RuntimeException('Instance of Duration or Period expected.');
         }
 
-        for ($start = $this->start; $start->isBefore($this->end);) {
+        for ($start = $this->getFiniteStart(); $start->isBefore($this->getFiniteEnd());) {
             yield $start;
 
             $start = $periodOrDuration instanceof Period
@@ -300,7 +309,7 @@ class LocalDateTimeInterval
     public function isEmpty(): bool
     {
         if ($this->isFinite()) {
-            return $this->start->compareTo($this->end) === 0;
+            return 0 === $this->getFiniteStart()->compareTo($this->getFiniteEnd());
         }
 
         return false;
@@ -315,7 +324,7 @@ class LocalDateTimeInterval
             return false;
         }
 
-        return $this->end->isBeforeOrEqualTo($t);
+        return $this->getFiniteEnd()->isBeforeOrEqualTo($t);
     }
 
     /**
@@ -342,7 +351,7 @@ class LocalDateTimeInterval
             return false;
         }
 
-        return $this->start->isAfter($t);
+        return $this->getFiniteStart()->isAfter($t);
     }
 
     /**
@@ -361,7 +370,7 @@ class LocalDateTimeInterval
         if ($this->hasInfiniteStart()) {
             $startCondition = true;
         } else {
-            $startCondition = !$this->start->isAfter($t);
+            $startCondition = !$this->getFiniteStart()->isAfter($t);
         }
 
         if (!$startCondition) {
@@ -371,7 +380,7 @@ class LocalDateTimeInterval
         if ($this->hasInfiniteEnd()) {
             $endCondition = true;
         } else {
-            $endCondition = $this->end->isAfter($t);
+            $endCondition = $this->getFiniteEnd()->isAfter($t);
         }
 
         return $endCondition;
@@ -386,23 +395,23 @@ class LocalDateTimeInterval
             return false;
         }
 
-        if ($this->hasInfiniteStart() && $other->end->isBeforeOrEqualTo($this->end)) {
+        if ($this->hasInfiniteStart() && $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
             return true;
         }
 
-        if ($this->hasInfiniteStart() && !$other->end->isBeforeOrEqualTo($this->end)) {
+        if ($this->hasInfiniteStart() && !$other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
             return false;
         }
 
-        if ($this->hasInfiniteEnd() && $other->start->isAfterOrEqualTo($this->start)) {
+        if ($this->hasInfiniteEnd() && $other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart())) {
             return true;
         }
 
-        if ($this->hasInfiniteEnd() && !$other->start->isAfterOrEqualTo($this->start)) {
+        if ($this->hasInfiniteEnd() && !$other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart())) {
             return false;
         }
 
-        if ($other->start->isAfterOrEqualTo($this->start) && $other->end->isBeforeOrEqualTo($this->end)) {
+        if ($other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart()) && $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
             return true;
         }
 
@@ -419,10 +428,10 @@ class LocalDateTimeInterval
             return false;
         }
 
-        $endA = $this->end;
+        $endA = $this->getFiniteEnd();
         $startB = $other->getStart();
 
-        if ($startB === null) {
+        if (null === $startB) {
             return true;
         }
 
@@ -447,7 +456,7 @@ class LocalDateTimeInterval
             return false;
         }
 
-        return $this->end->isEqualTo($other->start);
+        return $this->getFiniteEnd()->isEqualTo($other->getFiniteStart());
     }
 
     /**
@@ -465,8 +474,8 @@ class LocalDateTimeInterval
      */
     public function finishes(self $other): bool
     {
-        if (($this->end === null && $other->end !== null) ||
-            ($this->end !== null && $other->end === null)) {
+        if ((null === $this->end && null !== $other->end) ||
+            (null !== $this->end && null === $other->end)) {
             return false;
         }
 
@@ -482,7 +491,7 @@ class LocalDateTimeInterval
             return false;
         }
 
-        return $other->start->isBefore($this->start);
+        return $other->getFiniteStart()->isBefore($this->getFiniteStart());
     }
 
     /**
@@ -500,8 +509,8 @@ class LocalDateTimeInterval
      */
     public function starts(self $other): bool
     {
-        if (($this->start === null && $other->start !== null) ||
-            ($this->start !== null && $other->start === null)) {
+        if ((null === $this->start && null !== $other->start) ||
+            (null !== $this->start && null === $other->start)) {
             return false;
         }
 
@@ -517,7 +526,7 @@ class LocalDateTimeInterval
             return false;
         }
 
-        return $other->end->isAfter($this->end);
+        return $other->getFiniteEnd()->isAfter($this->getFiniteEnd());
     }
 
     /**
@@ -539,23 +548,25 @@ class LocalDateTimeInterval
             return false;
         }
 
-        if ($this->hasInfiniteStart() && $other->end->isBefore($this->end)) {
+        if ($this->hasInfiniteStart() && $other->getFiniteEnd()->isBefore($this->getFiniteEnd())) {
             return true;
         }
 
-        if ($this->hasInfiniteStart() && !$other->end->isBefore($this->end)) {
+        if ($this->hasInfiniteStart() && !$other->getFiniteEnd()->isBefore($this->getFiniteEnd())) {
             return false;
         }
 
-        if ($this->hasInfiniteEnd() && $other->start->isAfter($this->start)) {
+        if ($this->hasInfiniteEnd() && $other->getFiniteStart()->isAfter($this->getFiniteStart())) {
             return true;
         }
 
-        if ($this->hasInfiniteEnd() && !$other->start->isAfter($this->start)) {
+        if ($this->hasInfiniteEnd() && !$other->getFiniteStart()->isAfter($this->getFiniteStart())) {
             return false;
         }
 
-        if ($other->start->isAfter($this->start) && $other->end->isBefore($this->end)) {
+        if ($other->getFiniteStart()->isAfter($this->getFiniteStart()) &&
+            $other->getFiniteEnd()->isBefore($this->getFiniteEnd())
+        ) {
             return true;
         }
 
@@ -581,12 +592,18 @@ class LocalDateTimeInterval
             (
                 $this->hasInfiniteStart() ||
                 $other->hasInfiniteEnd() ||
-                ($this->start->isBefore($other->end) && $this->start->isBefore($other->start))
+                (
+                    $this->getFiniteStart()->isBefore($other->getFiniteEnd()) &&
+                    $this->getFiniteStart()->isBefore($other->getFiniteStart())
+                )
             ) &&
             (
                 $this->hasInfiniteEnd() ||
                 $other->hasInfiniteStart() ||
-                ($this->end->isAfter($other->start) && $this->end->isBefore($other->end))
+                (
+                    $this->getFiniteEnd()->isAfter($other->getFiniteStart()) &&
+                    $this->getFiniteEnd()->isBefore($other->getFiniteEnd())
+                )
             );
     }
 
@@ -602,13 +619,21 @@ class LocalDateTimeInterval
      * <p>Queries if this interval intersects the other one such that there is at least one common time point. </p>
      *
      * @param self $other another interval which might have an intersection with this interval
+     *
      * @return bool "true" if there is an non-empty intersection of this interval and the other one else "false"
      */
     public function intersects(self $other): bool
     {
         return
-            ($this->hasInfiniteStart() || $other->hasInfiniteEnd() || $this->start->isBefore($other->end)) &&
-            ($this->hasInfiniteEnd() || $other->hasInfiniteStart() || $this->end->isAfter($other->start));
+            (
+                $this->hasInfiniteStart() ||
+                $other->hasInfiniteEnd() ||
+                $this->getFiniteStart()->isBefore($other->getFiniteEnd())) &&
+            (
+                $this->hasInfiniteEnd() ||
+                $other->hasInfiniteStart() ||
+                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+            );
     }
 
     /**
@@ -618,7 +643,7 @@ class LocalDateTimeInterval
      */
     public function abuts(self $other): bool
     {
-        return $this->meets($other) ^ $this->metBy($other);
+        return (bool) ($this->meets($other) ^ $this->metBy($other));
     }
 
     /**
@@ -630,7 +655,7 @@ class LocalDateTimeInterval
     public function collapse(): self
     {
         if ($this->hasInfiniteStart()) {
-            throw new \RuntimeException("An interval with infinite past cannot be collapsed.");
+            throw new \RuntimeException('An interval with infinite past cannot be collapsed.');
         }
 
         return self::between($this->start, $this->start);
@@ -640,6 +665,7 @@ class LocalDateTimeInterval
      * <p>Obtains the intersection of this interval and other one if present. </p>
      *
      * @param self $other another interval which might have an intersection with this interval
+     *
      * @return  self|null wrapper around the found intersection or null
      */
     public function findIntersection(self $other): ?self
@@ -648,13 +674,13 @@ class LocalDateTimeInterval
             if ($this->hasInfiniteStart() || $other->hasInfiniteStart()) {
                 $start = null;
             } else {
-                $start = LocalDateTime::maxOf($this->start, $other->start);
+                $start = LocalDateTime::maxOf($this->getFiniteStart(), $other->getFiniteStart());
             }
 
             if ($this->hasInfiniteEnd() || $other->hasInfiniteEnd()) {
                 $end = null;
             } else {
-                $end = LocalDateTime::minOf($this->end, $other->end);
+                $end = LocalDateTime::minOf($this->getFiniteEnd(), $other->getFiniteEnd());
             }
 
             return self::between($start, $end);
