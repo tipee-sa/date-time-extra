@@ -9,7 +9,8 @@ use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
-use Symfony\Component\String\UnicodeString;
+use Gammadia\Moment\Moment;
+use Symfony\Component\String\ByteString;
 use Traversable;
 
 class LocalDateTimeInterval
@@ -40,7 +41,7 @@ class LocalDateTimeInterval
      * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
      * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
      *
-     * @return  self LocalDateTimeInterval interval
+     * @return self A LocalDateTimeInterval interval
      */
     public static function between(?LocalDateTime $start, ?LocalDateTime $end): self
     {
@@ -72,7 +73,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Yields the nullable start time point.
+     * Returns the nullable start time point.
      */
     public function getStart(): ?LocalDateTime
     {
@@ -80,7 +81,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Yields the nullable end time point.
+     * Returns the nullable end time point.
      */
     public function getEnd(): ?LocalDateTime
     {
@@ -93,7 +94,7 @@ class LocalDateTimeInterval
     public function getFiniteStart(): LocalDateTime
     {
         if (null === $this->start) {
-            throw new \RuntimeException('getFiniteStart() method can not return null');
+            throw new \RuntimeException('This interval has a non finite start.');
         }
 
         return $this->start;
@@ -105,7 +106,7 @@ class LocalDateTimeInterval
     public function getFiniteEnd(): LocalDateTime
     {
         if (null === $this->end) {
-            throw new \RuntimeException('getFiniteEnd() method can not return null');
+            throw new \RuntimeException('This interval has an non finite end.');
         }
 
         return $this->end;
@@ -128,26 +129,15 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Yields a descriptive string of start and end.
+     * Returns a string representation of this interval.
      */
     public function toString(): string
     {
-        $output = '';
-        if ($this->hasInfiniteStart()) {
-            $output .= InfinityStyle::SYMBOL;
-        } else {
-            $output .= $this->start;
-        }
-
-        $output .= '/';
-
-        if ($this->hasInfiniteEnd()) {
-            $output .= InfinityStyle::SYMBOL;
-        } else {
-            $output .= $this->end;
-        }
-
-        return $output;
+        return sprintf(
+            '%s/%s',
+            $this->hasInfiniteStart() ? InfinityStyle::SYMBOL : $this->start,
+            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end
+        );
     }
 
     /**
@@ -179,7 +169,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Interpreters a given text as interval.
+     * Parses the given text as as interval.
      *
      * @param string $text text to be parsed
      */
@@ -187,8 +177,8 @@ class LocalDateTimeInterval
     {
         [$startStr, $endStr] = explode('/', trim($text), 2);
 
-        $startStr = new UnicodeString($startStr);
-        $endStr = new UnicodeString($endStr);
+        $startStr = new ByteString($startStr);
+        $endStr = new ByteString($endStr);
 
         $startsWithPeriod = $startStr->startsWith('P');
         $startsWithInfinity = $startStr->equalsTo(InfinityStyle::SYMBOL);
@@ -224,9 +214,12 @@ class LocalDateTimeInterval
         if ($endsWithInfinity) {
             $ldt2 = null;
         } elseif ($endsWithPeriod) {
+            if (null === $ldt1) {
+                throw new \RuntimeException('Cannot process end period without start.');
+            }
             $ldt2 = $endStr->indexOf('T')
-                ? ($ldt1 ? $ldt1->plusDuration(Duration::parse($endStr->toString())) : null)
-                : ($ldt1 ? $ldt1->plusPeriod(Period::parse($endStr->toString())) : null);
+                ? $ldt1->plusDuration(Duration::parse($endStr->toString()))
+                : $ldt1->plusPeriod(Period::parse($endStr->toString()));
         } else {
             $ldt2 = LocalDateTime::parse($endStr->toString());
         }
@@ -235,7 +228,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Moves this interval along the POSIX-axis by given duration or period.
+     * Moves this interval along the POSIX-axis by the given duration or period.
      *
      * @param Duration|Period $periodOrDuration
      *
@@ -262,22 +255,22 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Yields the length of this interval and applies a timezone offset correction .
+     * Return the length of this interval and applies a timezone offset correction.
      *
      * @return Duration duration including a zonal correction
      */
     public function getDuration(): Duration
     {
         if (!$this->isFinite()) {
-            throw new \RuntimeException('Yield duration with infinite boundary is not possible.');
+            throw new \RuntimeException('Returning the duration with infinite boundary is not possible.');
         }
 
         return $this->atUTC()->getDuration();
     }
 
     /**
-     * Iterate through every moment which is the result of addition of given duration or period
-     * to start until the end of this interval is reached.
+     * Iterates through every moments which are the result of adding the given duration or period
+     * to the start until the end of this interval is reached.
      *
      * @param Period|Duration $periodOrDuration
      *
@@ -287,7 +280,7 @@ class LocalDateTimeInterval
     {
         /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
         if (!$this->isFinite()) {
-            throw new \RuntimeException('Streaming is not supported for infinite intervals.');
+            throw new \RuntimeException('Iterate is not supported for infinite intervals.');
         }
 
         if (!($periodOrDuration instanceof Period || $periodOrDuration instanceof Duration)) {
@@ -304,7 +297,29 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Determines if this interval is empty.
+     * Returns slices of this interval.
+     *
+     * Each slice is at most as long as this interval.
+     * If the duration between between the start and end moment is not a
+     * multiple of the interval, the last slice will be shorter.
+     *
+     * @param Period|Duration $periodOrDuration
+     *
+     * @return Traversable<self>
+     */
+    public function slice($periodOrDuration): Traversable
+    {
+        foreach ($this->iterate($periodOrDuration) as $start) {
+            $newStart = $periodOrDuration instanceof Period
+                ? $start->plusPeriod($periodOrDuration)
+                : $start->plusDuration($periodOrDuration);
+
+            yield self::between($start, LocalDateTime::minOf($newStart, $this->getFiniteEnd()));
+        }
+    }
+
+    /**
+     * Determines if this interval is empty. An interval is empty when the "end" is equal to the "start" boundary.
      */
     public function isEmpty(): bool
     {
@@ -316,7 +331,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Is this interval before the given time point?
+     * Is the finite end of this interval before or equal to the given local datetime.
      */
     public function isBefore(LocalDateTime $t): bool
     {
@@ -328,7 +343,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Is this interval before the other one?
+     * Is the finite end of this interval before or equal to the finite start of the given interval.
      */
     public function isBeforeInterval(self $other): bool
     {
@@ -343,7 +358,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Is this interval after the given time point?
+     * Is the finite start end of this interval after the given local datetime.
      */
     public function isAfter(LocalDateTime $t): bool
     {
@@ -355,7 +370,7 @@ class LocalDateTimeInterval
     }
 
     /**
-     * Is this interval after the other one?
+     * Is the finite start of this interval after or equal to the finite end of the given interval.
      */
     public function isAfterInterval(self $other): bool
     {
@@ -367,23 +382,8 @@ class LocalDateTimeInterval
      */
     public function contains(LocalDateTime $t): bool
     {
-        if ($this->hasInfiniteStart()) {
-            $startCondition = true;
-        } else {
-            $startCondition = !$this->getFiniteStart()->isAfter($t);
-        }
-
-        if (!$startCondition) {
-            return false; // short-cut
-        }
-
-        if ($this->hasInfiniteEnd()) {
-            $endCondition = true;
-        } else {
-            $endCondition = $this->getFiniteEnd()->isAfter($t);
-        }
-
-        return $endCondition;
+        return ($this->hasInfiniteStart() || !$this->getFiniteStart()->isAfter($t))
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($t));
     }
 
     /**
@@ -411,7 +411,8 @@ class LocalDateTimeInterval
             return false;
         }
 
-        if ($other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart()) && $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
+        if ($other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart()) &&
+            $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
             return true;
         }
 
@@ -655,7 +656,7 @@ class LocalDateTimeInterval
     public function collapse(): self
     {
         if ($this->hasInfiniteStart()) {
-            throw new \RuntimeException('An interval with infinite past cannot be collapsed.');
+            throw new \RuntimeException('An interval with infinite start cannot be collapsed.');
         }
 
         return self::between($this->start, $this->start);

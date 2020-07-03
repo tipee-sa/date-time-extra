@@ -15,6 +15,7 @@ use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
+use function Gammadia\Collections\Functional\map;
 
 class LocalDateTimeIntervalTest extends TestCase
 {
@@ -288,6 +289,70 @@ class LocalDateTimeIntervalTest extends TestCase
         yield [1, 'P1M', ''];
         yield [1, 'P1M1D', ''];
         yield [1, 'P2M', ''];
+    }
+
+    /**
+     * @dataProvider slicesCases
+     *
+     * @param Period|Duration $durationOrPeriod
+     * @param string[] $expected
+     */
+    public function testSlices($durationOrPeriod, string $interval, array $expected): void
+    {
+        $interval = LocalDateTimeInterval::parse($interval);
+        $slices = map(
+            iterator_to_array($interval->slice($durationOrPeriod)),
+            static function (LocalDateTimeInterval $slice): string {
+                return $slice->toString();
+            }
+        );
+        self::assertSame($expected, $slices);
+    }
+
+    /**
+     * @return iterable<mixed[]>
+     */
+    public function slicesCases(): iterable
+    {
+        yield [
+            Period::parse('P1D'),
+            '2019-02-01T00:00:00/2019-02-03T00:00:00',
+            [
+                '2019-02-01T00:00/2019-02-02T00:00',
+                '2019-02-02T00:00/2019-02-03T00:00',
+            ],
+        ];
+        yield [
+            Period::parse('P1D'),
+            '2019-03-31T00:00:00/P3D',
+            [
+                '2019-03-31T00:00/2019-04-01T00:00',
+                '2019-04-01T00:00/2019-04-02T00:00',
+                '2019-04-02T00:00/2019-04-03T00:00',
+            ],
+        ];
+        yield [
+            Duration::parse('PT23H'),
+            '2019-03-31T00:00:00/PT24H',
+            [
+                '2019-03-31T00:00/2019-03-31T23:00',
+                '2019-03-31T23:00/2019-04-01T00:00',
+            ],
+        ];
+        yield [
+            Duration::parse('PT3H'),
+            '2019-03-31T01:00:00/2019-04-01T00:00:00',
+            [
+                '2019-03-31T01:00/2019-03-31T04:00',
+                '2019-03-31T04:00/2019-03-31T07:00',
+                '2019-03-31T07:00/2019-03-31T10:00',
+                '2019-03-31T10:00/2019-03-31T13:00',
+                '2019-03-31T13:00/2019-03-31T16:00',
+                '2019-03-31T16:00/2019-03-31T19:00',
+                '2019-03-31T19:00/2019-03-31T22:00',
+                '2019-03-31T22:00/2019-04-01T00:00',
+            ],
+        ];
     }
 
     public function testWithStart(): void
