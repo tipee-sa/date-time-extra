@@ -68,7 +68,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $end = LocalDateTime::of(2012, 4, 5, 16, 0);
         $expected = LocalDateTimeInterval::between($start, $end);
 
-        self::assertTrue(LocalDateTimeInterval::parse('2012-04-01T14:15/P4DT1H45M')->equals($expected));
+        self::assertTrue(LocalDateTimeInterval::parse('2012-04-01T14:15/P4DT1H45M')->isEqualTo($expected));
     }
 
     public function testParsePeriodAndLocalDateTime(): void
@@ -77,7 +77,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $end = LocalDateTime::of(2012, 4, 5, 16, 0);
         $expected = LocalDateTimeInterval::between($start, $end);
 
-        self::assertTrue(LocalDateTimeInterval::parse('P4DT1H45M/2012-04-05T16:00')->equals($expected));
+        self::assertTrue(LocalDateTimeInterval::parse('P4DT1H45M/2012-04-05T16:00')->isEqualTo($expected));
     }
 
     /**
@@ -143,7 +143,7 @@ class LocalDateTimeIntervalTest extends TestCase
 
     public function testParseAlways(): void
     {
-        self::assertTrue(LocalDateTimeInterval::parse('-/-')->equals(LocalDateTimeInterval::between(null, null)));
+        self::assertTrue(LocalDateTimeInterval::parse('-/-')->isEqualTo(LocalDateTimeInterval::between(null, null)));
     }
 
     public function testParseInfinity(): void
@@ -151,11 +151,11 @@ class LocalDateTimeIntervalTest extends TestCase
         $tsp = LocalDateTime::of(2015, 1, 1, 8, 45);
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('2015-01-01T08:45/-')->equals(LocalDateTimeInterval::since($tsp))
+            LocalDateTimeInterval::parse('2015-01-01T08:45/-')->isEqualTo(LocalDateTimeInterval::since($tsp))
         );
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('-/2015-01-01T08:45')->equals(LocalDateTimeInterval::until($tsp))
+            LocalDateTimeInterval::parse('-/2015-01-01T08:45')->isEqualTo(LocalDateTimeInterval::until($tsp))
         );
     }
 
@@ -175,7 +175,7 @@ class LocalDateTimeIntervalTest extends TestCase
         //Duration
         self::assertTrue(
             LocalDateTimeInterval::parse('2012-04-10T00:00:01/2013-01-01T00:00:00')
-                ->equals(
+                ->isEqualTo(
                     LocalDateTimeInterval::parse('2012-04-10T00:00:00/2012-12-31T23:59:59')
                         ->move(Duration::parse('+PT1S'))
                 )
@@ -183,7 +183,7 @@ class LocalDateTimeIntervalTest extends TestCase
 
         self::assertTrue(
             LocalDateTimeInterval::parse('2012-04-10T00:00:00/2012-12-31T23:59:59')
-                ->equals(
+                ->isEqualTo(
                     LocalDateTimeInterval::parse('2012-04-10T00:00:01/2013-01-01T00:00:00')
                         ->move(Duration::parse('-PT1S'))
                 )
@@ -191,7 +191,7 @@ class LocalDateTimeIntervalTest extends TestCase
 
         self::assertTrue(
             LocalDateTimeInterval::parse('2012-01-01T02:10/2012-01-02T00:10')
-                ->equals(
+                ->isEqualTo(
                     LocalDateTimeInterval::parse('2012-01-01T01:50/2012-01-01T23:50')
                         ->move(Duration::parse('PT20M'))
                 )
@@ -199,7 +199,7 @@ class LocalDateTimeIntervalTest extends TestCase
 
         self::assertTrue(
             LocalDateTimeInterval::parse('2012-01-02T06:00/2012-01-02T16:00')
-                ->equals(
+                ->isEqualTo(
                     LocalDateTimeInterval::parse('2012-01-01T10:00/2012-01-01T20:00')
                         ->move(Duration::parse('PT20H'))
                 )
@@ -210,44 +210,44 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         //Period
         self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-02T00:00/2012-01-03T00:00')->equals(
+            LocalDateTimeInterval::parse('2012-01-02T00:00/2012-01-03T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->move(Period::parse('P1D'))
             )
         );
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-09T00:00/2012-01-10T00:00')->equals(
+            LocalDateTimeInterval::parse('2012-01-09T00:00/2012-01-10T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->move(Period::parse('P1W1D'))
             )
         );
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('2012-02-09T00:00/2012-02-10T00:00')->equals(
+            LocalDateTimeInterval::parse('2012-02-09T00:00/2012-02-10T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->move(Period::parse('P1M1W1D'))
             )
         );
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->equals(
+            LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2012-02-09T00:00/2012-02-10T00:00')->move(Period::parse('-P1M1W1D'))
             )
         );
 
         //Leap year
         self::assertTrue(
-            LocalDateTimeInterval::parse('2017-02-28T00:00/2017-06-01T00:00')->equals(
+            LocalDateTimeInterval::parse('2017-02-28T00:00/2017-06-01T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2016-02-29T00:00/2016-06-01T00:00')->move(Period::parse('P1Y'))
             )
         );
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('2016-02-28T00:00/2016-06-01T00:00')->equals(
+            LocalDateTimeInterval::parse('2016-02-28T00:00/2016-06-01T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2017-02-28T00:00/2017-06-01T00:00')->move(Period::parse('-P1Y'))
             )
         );
 
         self::assertTrue(
-            LocalDateTimeInterval::parse('2015-02-28T00:00/2015-06-01T00:00')->equals(
+            LocalDateTimeInterval::parse('2015-02-28T00:00/2015-06-01T00:00')->isEqualTo(
                 LocalDateTimeInterval::parse('2016-02-29T00:00/2016-06-01T00:00')->move(Period::parse('-P1Y'))
             )
         );
@@ -363,7 +363,7 @@ class LocalDateTimeIntervalTest extends TestCase
 
         $interval = LocalDateTimeInterval::between($mid, $end);
 
-        self::assertTrue(LocalDateTimeInterval::between($start, $end)->equals($interval->withStart($start)));
+        self::assertTrue(LocalDateTimeInterval::between($start, $end)->isEqualTo($interval->withStart($start)));
     }
 
     public function testWithEnd(): void
@@ -374,7 +374,7 @@ class LocalDateTimeIntervalTest extends TestCase
 
         $interval = LocalDateTimeInterval::between($start, $mid);
 
-        self::assertTrue(LocalDateTimeInterval::between($start, $end)->equals($interval->withEnd($end)));
+        self::assertTrue(LocalDateTimeInterval::between($start, $end)->isEqualTo($interval->withEnd($end)));
     }
 
     public function testSince(): void
@@ -577,16 +577,16 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2013')));
 
         $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection && $this->interval('2010|2011')->equals($intersection));
+        self::assertTrue($intersection && $this->interval('2010|2011')->isEqualTo($intersection));
 
         $intersection2 = $this->interval('2010|2011')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection2 && $this->interval('2010|2011')->equals($intersection2));
+        self::assertTrue($intersection2 && $this->interval('2010|2011')->isEqualTo($intersection2));
 
         $intersection3 = $this->interval('2011|2012')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection3 && $this->interval('2011|2012')->equals($intersection3));
+        self::assertTrue($intersection3 && $this->interval('2011|2012')->isEqualTo($intersection3));
 
         $intersection4 = $this->interval('2011|2014')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection4 && $this->interval('2011|2013')->equals($intersection4));
+        self::assertTrue($intersection4 && $this->interval('2011|2013')->isEqualTo($intersection4));
     }
 
     public function testFinishes(): void
@@ -723,27 +723,27 @@ class LocalDateTimeIntervalTest extends TestCase
 
     public function testCollapse(): void
     {
-        self::assertTrue($this->interval('2011|2011')->equals($this->interval('2011|2012')->collapse()));
-        self::assertTrue($this->interval('2011|2011')->equals($this->interval('2011|----')->collapse()));
-        self::assertTrue($this->interval('2011|2011')->equals($this->interval('2011|2011')->collapse()));
+        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|2012')->collapse()));
+        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|----')->collapse()));
+        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|2011')->collapse()));
     }
 
     public function testEquals(): void
     {
-        self::assertTrue($this->interval('----|2011')->equals($this->interval('----|2011')));
-        self::assertTrue($this->interval('2010|2011')->equals($this->interval('2010|2011')));
-        self::assertTrue($this->interval('2012|----')->equals($this->interval('2012|----')));
-        self::assertTrue($this->interval('2012|2013')->equals($this->interval('2012|2013')));
-        self::assertTrue($this->interval('2011|2011')->equals($this->interval('2011|2011')));
-        self::assertTrue($this->interval('2012|----')->equals($this->interval('2012|----')));
+        self::assertTrue($this->interval('----|2011')->isEqualTo($this->interval('----|2011')));
+        self::assertTrue($this->interval('2010|2011')->isEqualTo($this->interval('2010|2011')));
+        self::assertTrue($this->interval('2012|----')->isEqualTo($this->interval('2012|----')));
+        self::assertTrue($this->interval('2012|2013')->isEqualTo($this->interval('2012|2013')));
+        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|2011')));
+        self::assertTrue($this->interval('2012|----')->isEqualTo($this->interval('2012|----')));
 
-        self::assertFalse($this->interval('----|2011')->equals($this->interval('2011|2011')));
-        self::assertFalse($this->interval('2012|----')->equals($this->interval('2012|2013')));
-        self::assertFalse($this->interval('2010|2011')->equals($this->interval('2010|----')));
-        self::assertFalse($this->interval('2012|2013')->equals($this->interval('----|2011')));
+        self::assertFalse($this->interval('----|2011')->isEqualTo($this->interval('2011|2011')));
+        self::assertFalse($this->interval('2012|----')->isEqualTo($this->interval('2012|2013')));
+        self::assertFalse($this->interval('2010|2011')->isEqualTo($this->interval('2010|----')));
+        self::assertFalse($this->interval('2012|2013')->isEqualTo($this->interval('----|2011')));
 
-        self::assertFalse($this->interval('2012|2013')->equals($this->interval('2011|2013')));
-        self::assertFalse($this->interval('----|2013')->equals($this->interval('----|2012')));
-        self::assertFalse($this->interval('2012|----')->equals($this->interval('2013|----')));
+        self::assertFalse($this->interval('2012|2013')->isEqualTo($this->interval('2011|2013')));
+        self::assertFalse($this->interval('----|2013')->isEqualTo($this->interval('----|2012')));
+        self::assertFalse($this->interval('2012|----')->isEqualTo($this->interval('2013|----')));
     }
 }

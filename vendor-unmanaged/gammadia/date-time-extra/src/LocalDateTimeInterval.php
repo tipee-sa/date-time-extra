@@ -299,9 +299,7 @@ class LocalDateTimeInterval
     /**
      * Returns slices of this interval.
      *
-     * Each slice is at most as long as this interval.
-     * If the duration between between the start and end moment is not a
-     * multiple of the interval, the last slice will be shorter.
+     * Each slice is at most as long as the given period or duration. The last slice might be shorter.
      *
      * @param Period|Duration $periodOrDuration
      *
@@ -310,11 +308,11 @@ class LocalDateTimeInterval
     public function slice($periodOrDuration): Traversable
     {
         foreach ($this->iterate($periodOrDuration) as $start) {
-            $newStart = $periodOrDuration instanceof Period
+            $end = $periodOrDuration instanceof Period
                 ? $start->plusPeriod($periodOrDuration)
                 : $start->plusDuration($periodOrDuration);
 
-            yield self::between($start, LocalDateTime::minOf($newStart, $this->getFiniteEnd()));
+            yield self::between($start, LocalDateTime::minOf($end, $this->getFiniteEnd()));
         }
     }
 
@@ -693,7 +691,7 @@ class LocalDateTimeInterval
     /**
      * Compares the boundaries (start and end) of this and the other interval.
      */
-    public function equals(self $other): bool
+    public function isEqualTo(self $other): bool
     {
         if ($this->hasInfiniteStart() !== $other->hasInfiniteStart() ||
             $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()) {
