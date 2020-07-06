@@ -9,7 +9,6 @@ use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
-use Gammadia\Moment\Moment;
 use Symfony\Component\String\ByteString;
 use Traversable;
 
