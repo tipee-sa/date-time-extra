@@ -1,434 +1,729 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\LocalDateTime;
-use Brick\DateTime\TimeZone;
+use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
+use Brick\DateTime\TimeZoneRegion;
+use Symfony\Component\String\ByteString;
+use Traversable;
 
 class LocalDateTimeInterval
 {
     /**
-     * @var LocalDateTime
+     * @var LocalDateTime|null
      */
     private $start;
 
     /**
-     * @var LocalDateTime
+     * @var LocalDateTime|null
      */
     private $end;
 
-    private function __construct(LocalDateTime $start, LocalDateTime $end)
+    private function __construct(?LocalDateTime $start, ?LocalDateTime $end)
     {
-        if ($start->isAfter($end)) {
-            throw new \InvalidArgumentException("Start after end: $start / $end");
+        if ($start && $end && $start->isAfter($end)) {
+            throw new \InvalidArgumentException("Start after end: ${start} / ${end}");
         }
 
         $this->start = $start;
         $this->end = $end;
     }
 
-    public static function between(LocalDateTime $start, LocalDateTime $end): self
+    /**
+     * Creates a finite half-open interval between given time points.
+     *
+     * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
+     * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
+     *
+     * @return self A LocalDateTimeInterval interval
+     */
+    public static function between(?LocalDateTime $start, ?LocalDateTime $end): self
     {
         return new self($start, $end);
     }
 
     /**
-     * <p>Creates an infinite half-open interval since given start. </p>
+     * Creates an infinite half-open interval since given start.
+     *
+     * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
+     *
+     * @return self new local datetime interval
      */
     public static function since(LocalDateTime $start): self
     {
-//        return MomentInterval.since(Moment.from(start));
+        return new self($start, null);
     }
 
     /**
-     * <p>Creates an infinite open interval until given end. </p>
+     * Creates an infinite open interval until given end.
+     *
+     * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
+     *
+     * @return self new timestamp interval
      */
     public static function until(LocalDateTime $end): self
     {
-
-//    Boundary<Moment> past = Boundary.infinitePast();
-//        return new MomentInterval(past, Boundary.of(OPEN, end));
+        return new self(null, $end);
     }
 
     /**
-     * <p>Combines this local timestamp interval with the timezone offset
-     * UTC+00:00 to a global UTC-interval. </p>
+     * Returns the nullable start time point.
+     */
+    public function getStart(): ?LocalDateTime
+    {
+        return $this->start;
+    }
+
+    /**
+     * Returns the nullable end time point.
+     */
+    public function getEnd(): ?LocalDateTime
+    {
+        return $this->end;
+    }
+
+    /**
+     * Yields the start time point if not null.
+     */
+    public function getFiniteStart(): LocalDateTime
+    {
+        if (null === $this->start) {
+            throw new \RuntimeException('This interval has a non finite start.');
+        }
+
+        return $this->start;
+    }
+
+    /**
+     * Yields the start time point if not null.
+     */
+    public function getFiniteEnd(): LocalDateTime
+    {
+        if (null === $this->end) {
+            throw new \RuntimeException('This interval has an non finite end.');
+        }
+
+        return $this->end;
+    }
+
+    /**
+     * Yields a copy of this interval with given start time.
+     */
+    public function withStart(LocalDateTime $t): self
+    {
+        return self::between($t, $this->end);
+    }
+
+    /**
+     * Yields a copy of this interval with given end time.
+     */
+    public function withEnd(LocalDateTime $t): self
+    {
+        return self::between($this->start, $t);
+    }
+
+    /**
+     * Returns a string representation of this interval.
+     */
+    public function toString(): string
+    {
+        return sprintf(
+            '%s/%s',
+            $this->hasInfiniteStart() ? InfinityStyle::SYMBOL : $this->start,
+            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end
+        );
+    }
+
+    /**
+     * Combines this local datetime interval with the timezone offset UTC+00:00 to a global UTC-interval.
      *
-     * @return  global timestamp interval interpreted at offset UTC+00:00
+     * @return InstantInterval global timestamp interval interpreted at offset UTC+00:00
      */
     public function atUTC(): InstantInterval
     {
-//        return this.at(ZonalOffset.UTC);
+        return InstantInterval::between(
+            $this->start ? $this->start->atTimeZone(TimeZoneOffset::utc())->getInstant() : null,
+            $this->end ? $this->end->atTimeZone(TimeZoneOffset::utc())->getInstant() : null
+        );
     }
 
-
     /**
-     * <p>Combines this local timestamp interval with given timezone offset
-     * to a global UTC-interval. </p>
+     * Combines this local timestamp interval with given timezone to a ZonedInterval.
      *
-     * @param offset  timezone offset
-     * @return  global timestamp interval interpreted at given offset
-     * @since   2.0
-     * @see     #atUTC()
-     * @see     #inTimezone(TZID)
+     * @param TimeZoneRegion $timezoneId timezone id
+     *
+     * @return ZonedDateTimeInterval zoned datetime interval interpreted in given timezone
      */
-    public function at(TimeZoneOffset $offset): InstantInterval
+    public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
     {
-//
-//        Boundary<Moment> b1;
-//        Boundary<Moment> b2;
-//
-//        if (this.getStart().isInfinite()) {
-//            b1 = Boundary.infinitePast();
-//        } else {
-//    Moment m1 = this.getStart().getTemporal().at(offset);
-//            b1 = Boundary.of(this.getStart().getEdge(), m1);
-//        }
-//
-//if (this.getEnd().isInfinite()) {
-//    b2 = Boundary.infiniteFuture();
-//} else {
-//    Moment m2 = this.getEnd().getTemporal().at(offset);
-//            b2 = Boundary.of(this.getEnd().getEdge(), m2);
-//        }
-//
-//return new MomentInterval(b1, b2);
-
+        return ZonedDateTimeInterval::between(
+            $this->start ? $this->start->atTimeZone($timezoneId) : null,
+            $this->end ? $this->end->atTimeZone($timezoneId) : null
+        );
     }
 
     /**
-     * <p>Combines this local timestamp interval with given timezone
-     * to a global UTC-interval. </p>
+     * Parses the given text as as interval.
      *
-     * @param tzid        timezone id
-     * @return  global timestamp interval interpreted in given timezone
-     * @throws  IllegalArgumentException if given timezone cannot be loaded
-     * @since   2.0
-     * @see     Timezone#of(TZID)
-     * @see     #inStdTimezone()
-     * @see     GapResolver#NEXT_VALID_TIME
-     * @see     OverlapResolver#EARLIER_OFFSET
+     * @param string $text text to be parsed
      */
-    public function inTimezone(TimeZone $tzid): ZonedDateTimeInterval
+    public static function parse(string $text): self
     {
-//        return this.in(Timezone.of(tzid).with(GapResolver.NEXT_VALID_TIME.and(OverlapResolver.EARLIER_OFFSET)));
+        [$startStr, $endStr] = explode('/', trim($text), 2);
+
+        $startStr = new ByteString($startStr);
+        $endStr = new ByteString($endStr);
+
+        $startsWithPeriod = $startStr->startsWith('P');
+        $startsWithInfinity = $startStr->equalsTo(InfinityStyle::SYMBOL);
+
+        $endsWithPeriod = $endStr->startsWith('P');
+        $endsWithInfinity = $endStr->equalsTo(InfinityStyle::SYMBOL);
+
+        if ($startsWithPeriod && $endsWithPeriod) {
+            throw IntervalParseException::uniqueDuration($text);
+        }
+
+        if (($startsWithPeriod && $endsWithInfinity) ||
+            ($startsWithInfinity && $endsWithPeriod)
+        ) {
+            throw IntervalParseException::durationIncompatibleWithInfinity($text);
+        }
+
+        //START
+        if ($startsWithInfinity) {
+            $ldt1 = null;
+        } elseif ($startsWithPeriod) {
+            $ldt2 = LocalDateTime::parse($endStr->toString());
+            $ldt1 = $startStr->indexOf('T')
+                ? $ldt2->minusDuration(Duration::parse($startStr->toString()))
+                : $ldt2->minusPeriod(Period::parse($startStr->toString()));
+
+            return self::between($ldt1, $ldt2);
+        } else {
+            $ldt1 = LocalDateTime::parse($startStr->toString());
+        }
+
+        //END
+        if ($endsWithInfinity) {
+            $ldt2 = null;
+        } elseif ($endsWithPeriod) {
+            if (null === $ldt1) {
+                throw new \RuntimeException('Cannot process end period without start.');
+            }
+            $ldt2 = $endStr->indexOf('T')
+                ? $ldt1->plusDuration(Duration::parse($endStr->toString()))
+                : $ldt1->plusPeriod(Period::parse($endStr->toString()));
+        } else {
+            $ldt2 = LocalDateTime::parse($endStr->toString());
+        }
+
+        return self::between($ldt1, $ldt2);
     }
 
-
     /**
-     * <p>Interpretes given ISO-conforming text as interval. </p>
+     * Moves this interval along the POSIX-axis by the given duration or period.
      *
-     * <p>All styles are supported, namely calendar dates, ordinal dates
-     * and week dates, either in basic or in extended format. Mixed date
-     * styles for start and end are not allowed however. Furthermore, one
-     * of start or end can also be represented by a period string. If not
-     * then the end component may exist in an abbreviated form as
-     * documented in ISO-8601-paper leaving out higher-order elements
-     * like the calendar year (which will be overtaken from the start
-     * component instead). Infinity symbols are understood as extension
-     * although strictly spoken ISO-8601 does not know or specify infinite
-     * intervals. Examples for supported formats: </p>
+     * @param Duration|Period $periodOrDuration
      *
-     * <pre>
-     *  System.out.println(
-     *      TimestampInterval.parseISO(
-     *          &quot;2012-01-01T14:15/2014-06-20T16:00&quot;));
-     *  // output: [2012-01-01T14:15/2014-06-20T16:00)
-     *
-     *  System.out.println(
-     *      TimestampInterval.parseISO(
-     *          &quot;2012-01-01T14:15/08-11T16:00&quot;));
-     *  // output: [2012-01-01T14:15/2012-08-11T16:00)
-     *
-     *  System.out.println(
-     *      TimestampInterval.parseISO(
-     *          &quot;2012-01-01T14:15/16:00&quot;));
-     *  // output: [2012-01-01T14:15/2012-01-01T16:00)
-     *
-     *  System.out.println(
-     *      TimestampInterval.parseISO(
-     *          &quot;2012-01-01T14:15/P2DT1H45M&quot;));
-     *  // output: [2012-01-01T14:15/2012-01-03T16:00)
-     *
-     *  System.out.println(
-     *      TimestampInterval.parseISO(
-     *          &quot;2015-01-01T08:45/-&quot;));
-     *  // output: [2015-01-01T08:45:00/+&#x221E;)
-     * </pre>
-     *
-     * <p>This method dynamically creates an appropriate interval format for reduced forms.
-     * If performance is more important then a static fixed formatter might be considered. </p>
-     *
-     * @param   text        text to be parsed
-     * @return  parsed interval
-     * @throws  IndexOutOfBoundsException if given text is empty
-     * @throws  ParseException if the text is not parseable
-     * @since   2.0
-     * @see     BracketPolicy#SHOW_NEVER
+     * @return self moved copy of this interval
      */
-    public static function parseISO(string $text): self
+    public function move($periodOrDuration): self
     {
-//
-//        if (text.isEmpty()) {
-//            throw new IndexOutOfBoundsException("Empty text.");
-//        }
-//
-//// prescan for format analysis
-//int start = 0;
-//        int n = Math.min(text.length(), 107);
-//        boolean sameFormat = true;
-//        int firstDate = 1; // loop starts one index position later
-//        int secondDate = 0;
-//        int timeLength = 0;
-//        boolean startsWithHyphen = (text.charAt(0) == '-');
-//
-//        if ((text.charAt(0) == 'P') || startsWithHyphen) {
-//            for (int i = 1; i < n; i++) {
-//                if (text.charAt(i) == '/') {
-//                    if (i + 1 == n) {
-//                        throw new ParseException("Missing end component.", n);
-//                    } else if (startsWithHyphen) {
-//                        if ((text.charAt(1) == '\u221E') || (i == 1)) {
-//                            start = i + 1;
-//                        }
-//                    } else {
-//                        start = i + 1;
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-//
-//        int literals = 0;
-//        int literals2 = 0;
-//        boolean ordinalStyle = false;
-//        boolean weekStyle = false;
-//        boolean weekStyle2 = false;
-//        boolean secondComponent = false;
-//        int slash = -1;
-//
-//        for (int i = start + 1; i < n; i++) {
-//    char c = text.charAt(i);
-//            if (secondComponent) {
-//                if (
-//                    (c == 'P')
-//                    || ((c == '-') && (i == n - 1))
-//                    || ((c == '+') && (i == n - 2) && (text.charAt(i + 1) == '\u221E'))
-//                ) {
-//                    secondComponent = false;
-//                    break;
-//                } else if ((c == 'T') || (timeLength > 0)) {
-//                    timeLength++;
-//                } else {
-//                    if (c == 'W') {
-//                        weekStyle2 = true;
-//                    } else if ((c == '-') && (i > slash + 1)) {
-//                        literals2++;
-//                    }
-//                    secondDate++;
-//                }
-//            } else if (c == '/') {
-//                if (slash == -1) {
-//                    slash = i;
-//                    secondComponent = true;
-//                    timeLength = 0;
-//                } else {
-//                    throw new ParseException("Interval with two slashes found: " + text, i);
-//                }
-//            } else if ((c == 'T') || (timeLength > 0)) {
-//                timeLength++;
-//            } else if (c == '-') {
-//                firstDate++;
-//                literals++;
-//            } else if (c == 'W') {
-//                firstDate++;
-//                weekStyle = true;
-//            } else {
-//                firstDate++;
-//            }
-//        }
-//
-//        if (secondComponent && (weekStyle != weekStyle2)) {
-//            throw new ParseException("Mixed date styles not allowed.", n);
-//        }
-//
-//        char c = text.charAt(start);
-//        int componentLength = firstDate - 4;
-//
-//        if ((c == '+') || (c == '-')) {
-//            componentLength -= 2;
-//        }
-//
-//        if (!weekStyle) {
-//            ordinalStyle = ((literals == 1) || ((literals == 0) && (componentLength == 3)));
-//        }
-//
-//        boolean extended = (literals > 0);
-//        boolean hasT = true;
-//
-//        if (secondComponent) {
-//            if (timeLength == 0) { // no T in end component => no date part
-//                hasT = false;
-//                timeLength = secondDate;
-//                secondDate = 0;
-//            }
-//            sameFormat = ((firstDate == secondDate) && (literals == literals2));
-//        }
-//
-//        // prepare component parsers
-//        ChronoFormatter<PlainTimestamp> startFormat = (
-//extended ? Iso8601Format.EXTENDED_DATE_TIME : Iso8601Format.BASIC_DATE_TIME);
-//        ChronoFormatter<PlainTimestamp> endFormat = (sameFormat ? startFormat : null); // null means reduced iso format
-//
-//        // create interval
-//        Parser parser = new Parser(startFormat, endFormat, extended, weekStyle, ordinalStyle, timeLength, hasT);
-//        return parser.parse(text);
+        /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
+        if ($periodOrDuration instanceof Period) {
+            return new self(
+                $this->start ? $this->start->plusPeriod($periodOrDuration) : null,
+                $this->end ? $this->end->plusPeriod($periodOrDuration) : null
+            );
+        }
 
+        if ($periodOrDuration instanceof Duration) {
+            return new self(
+                $this->start ? $this->start->plusDuration($periodOrDuration) : null,
+                $this->end ? $this->end->plusDuration($periodOrDuration) : null
+            );
+        }
+
+        throw new \RuntimeException('The given value must be either Duration or Period.');
     }
 
     /**
-     * Obtains a random moment within this interval. </p>
+     * Return the length of this interval and applies a timezone offset correction.
+     *
+     * @return Duration duration including a zonal correction
      */
-    public function random(): LocalDateTime
+    public function getDuration(): Duration
     {
+        if (!$this->isFinite()) {
+            throw new \RuntimeException('Returning the duration with infinite boundary is not possible.');
+        }
 
-//        MomentInterval interval = this.toCanonical();
-//
-//        if (interval.isFinite() && !interval.isEmpty()) {
-//            Moment m1 = interval.getStartAsMoment();
-//            Moment m2 = interval.getEndAsMoment();
-//            double factor = MRD;
-//            double d1 = m1.getPosixTime() + m1.getNanosecond() / factor;
-//            double d2 = m2.getPosixTime() + m2.getNanosecond() / factor;
-//            double randomNum = ThreadLocalRandom.current().nextDouble(d1, d2);
-//            long posix = (long) Math.floor(randomNum);
-//            int fraction = (int) (MRD * (randomNum - posix));
-//            Moment random = Moment.of(posix, fraction, TimeScale.POSIX);
-//            if (random.isBefore(m1)) {
-//                random = m1;
-//            } else if (random.isAfterOrEqual(m2)) {
-//    random = m2.minus(1, TimeUnit.NANOSECONDS);
-//}
-//return random;
-//} else {
-//    throw new IllegalStateException("Cannot get random moment in an empty or infinite interval: " + this);
-//}
-
+        return $this->atUTC()->getDuration();
     }
 
     /**
-     * <p>Yields the length of this interval in given units and applies
-     * a timezone offset correction . </p>
+     * Iterates through every moments which are the result of adding the given duration or period
+     * to the start until the end of this interval is reached.
      *
-     * @param   tz      timezone
-     * @param   units   time units to be used in calculation
-     * @return  duration in given units including a zonal correction
-     * @throws  UnsupportedOperationException if this interval is infinite
-     * @since   2.0
+     * @param Period|Duration $periodOrDuration
+     *
+     * @return Traversable<LocalDateTime>
      */
-    public function getDuration(
-        Timezone $tz
-//        IsoUnit... units
-    ): Duration {
-//
-//        PlainTimestamp tsp = this.getTemporalOfOpenEnd();
-//        boolean max = (tsp == null);
-//
-//        if (max) { // max reached
-//            tsp = this.getEnd().getTemporal();
-//        }
-//
-//Duration<IsoUnit> result =
-//    Duration.in(tz, units).between(
-//        this.getTemporalOfClosedStart(),
-//        tsp);
-//
-//        if (max) {
-//            for (IsoUnit unit : units) {
-//                if (unit.equals(ClockUnit.NANOS)) {
-//                    return result.plus(1, unit);
-//                }
-//            }
-//        }
-//
-//        return result;
-
-    }
-
-
-    /**
-     * <p>Moves this interval along the POSIX-axis by given time units. </p>
-     *
-     * @param   amount  amount of units
-     * @param   unit    time unit for moving
-     * @return  moved copy of this interval
-     */
-    public function move(
-        int $amount
-//        TimeUnit unit todo? Make a constant out of it?
-    ): self {
-
-//        if (amount == 0) {
-//            return this;
-//        }
-//
-//        Boundary<PlainTimestamp> s;
-//        Boundary<PlainTimestamp> e;
-//
-//        if (this.getStart().isInfinite()) {
-//            s = Boundary.infinitePast();
-//        } else {
-//            s =
-//                Boundary.of(
-//                    this.getStart().getEdge(),
-//                    this.getStart().getTemporal().plus(amount, unit));
-//        }
-//
-//        if (this.getEnd().isInfinite()) {
-//            e = Boundary.infiniteFuture();
-//        } else {
-//            e =
-//                Boundary.of(
-//                    this.getEnd().getEdge(),
-//                    this.getEnd().getTemporal().plus(amount, unit));
-//        }
-//
-//        return new TimestampInterval(s, e);
-    }
-
-    /**
-     * <p>Obtains a stream iterating over every moment which is the result of addition of given duration
-     * to start until the end of this interval is reached. </p>
-     *
-     * <p>The stream size is limited to {@code Integer.MAX_VALUE - 1} else an {@code ArithmeticException}
-     * will be thrown. </p>
-     *
-     * @param   duration    duration which has to be added to the start multiple times
-     * @return  stream consisting of distinct moments which are the result of adding the duration to the start
-     * @throws  IllegalStateException if this interval is infinite or if there is no canonical form
-     * @throws  IllegalArgumentException if the duration is not positive
-     * @see     #toCanonical()
-     * @see     #stream(MachineTime, Moment, Moment)
-     * @since   4.35
-     */
-    /* public Stream<Moment> stream(MachineTime<?><!-- duration) {*/
-    public function stream(Duration $duration) {//todo rename: iterate? Add a slice() and split() methode. See Gammadia\Moment\Period
-//        TimestampInterval interval = this.toCanonical();
-//        PlainTimestamp start = interval.getStartAsTimestamp();
-//        PlainTimestamp end = interval.getEndAsTimestamp();
-//
-//        if ((start == null) || (end == null)) {
-//            throw new IllegalStateException("Streaming is not supported for infinite intervals.");
-//        }
-//
-//        return TimestampInterval.stream(duration, start, end);
-    }
-
-    // todo @see format(...) methods from Time4j classes
-    public function toString(): string
+    public function iterate($periodOrDuration): Traversable
     {
+        /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
+        if (!$this->isFinite()) {
+            throw new \RuntimeException('Iterate is not supported for infinite intervals.');
+        }
 
+        if (!($periodOrDuration instanceof Period || $periodOrDuration instanceof Duration)) {
+            throw new \RuntimeException('Instance of Duration or Period expected.');
+        }
+
+        for ($start = $this->getFiniteStart(); $start->isBefore($this->getFiniteEnd());) {
+            yield $start;
+
+            $start = $periodOrDuration instanceof Period
+                ? $start->plusPeriod($periodOrDuration)
+                : $start->plusDuration($periodOrDuration);
+        }
+    }
+
+    /**
+     * Returns slices of this interval.
+     *
+     * Each slice is at most as long as the given period or duration. The last slice might be shorter.
+     *
+     * @param Period|Duration $periodOrDuration
+     *
+     * @return Traversable<self>
+     */
+    public function slice($periodOrDuration): Traversable
+    {
+        foreach ($this->iterate($periodOrDuration) as $start) {
+            $end = $periodOrDuration instanceof Period
+                ? $start->plusPeriod($periodOrDuration)
+                : $start->plusDuration($periodOrDuration);
+
+            yield self::between($start, LocalDateTime::minOf($end, $this->getFiniteEnd()));
+        }
+    }
+
+    /**
+     * Determines if this interval is empty. An interval is empty when the "end" is equal to the "start" boundary.
+     */
+    public function isEmpty(): bool
+    {
+        if ($this->isFinite()) {
+            return 0 === $this->getFiniteStart()->compareTo($this->getFiniteEnd());
+        }
+
+        return false;
+    }
+
+    /**
+     * Is the finite end of this interval before or equal to the given local datetime.
+     */
+    public function isBefore(LocalDateTime $t): bool
+    {
+        if ($this->hasInfiniteEnd()) {
+            return false;
+        }
+
+        return $this->getFiniteEnd()->isBeforeOrEqualTo($t);
+    }
+
+    /**
+     * Is the finite end of this interval before or equal to the finite start of the given interval.
+     */
+    public function isBeforeInterval(self $other): bool
+    {
+        if ($other->hasInfiniteStart() || $this->hasInfiniteEnd()) {
+            return false;
+        }
+
+        $endA = $this->getFiniteEnd();
+        $startB = $other->getFiniteStart();
+
+        return $endA->isBeforeOrEqualTo($startB);
+    }
+
+    /**
+     * Is the finite start end of this interval after the given local datetime.
+     */
+    public function isAfter(LocalDateTime $t): bool
+    {
+        if ($this->hasInfiniteStart()) {
+            return false;
+        }
+
+        return $this->getFiniteStart()->isAfter($t);
+    }
+
+    /**
+     * Is the finite start of this interval after or equal to the finite end of the given interval.
+     */
+    public function isAfterInterval(self $other): bool
+    {
+        return $other->isBeforeInterval($this);
+    }
+
+    /**
+     * Queries if given time point belongs to this interval.
+     */
+    public function contains(LocalDateTime $t): bool
+    {
+        return ($this->hasInfiniteStart() || !$this->getFiniteStart()->isAfter($t))
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($t));
+    }
+
+    /**
+     * Does this interval contain the other one?
+     */
+    public function containsInterval(self $other): bool
+    {
+        if (!$other->isFinite()) {
+            return false;
+        }
+
+        if ($this->hasInfiniteStart() && $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
+            return true;
+        }
+
+        if ($this->hasInfiniteStart() && !$other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
+            return false;
+        }
+
+        if ($this->hasInfiniteEnd() && $other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart())) {
+            return true;
+        }
+
+        if ($this->hasInfiniteEnd() && !$other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart())) {
+            return false;
+        }
+
+        if ($other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart()) &&
+            $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * ALLEN-relation: Does this interval precede the other one such that
+     * there is a gap between?
+     */
+    public function precedes(self $other): bool
+    {
+        if ($other->hasInfiniteStart() || $this->hasInfiniteEnd()) {
+            return false;
+        }
+
+        $endA = $this->getFiniteEnd();
+        $startB = $other->getStart();
+
+        if (null === $startB) {
+            return true;
+        }
+
+        return $endA->isBefore($startB);
+    }
+
+    /**
+     * ALLEN-relation: Equivalent to $other->precedes($this).
+     */
+    public function precededBy(self $other): bool
+    {
+        return $other->precedes($this);
+    }
+
+    /**
+     * ALLEN-relation: Does this interval precede the other one such that
+     * there is no gap between?
+     */
+    public function meets(self $other): bool
+    {
+        if ($other->hasInfiniteStart() || $this->hasInfiniteEnd()) {
+            return false;
+        }
+
+        return $this->getFiniteEnd()->isEqualTo($other->getFiniteStart());
+    }
+
+    /**
+     * ALLEN-relation: Equivalent to $other->meets($this).
+     */
+    public function metBy(self $other): bool
+    {
+        return $other->meets($this);
+    }
+
+    /**
+     * ALLEN-relation: Does this interval finish the other one such that
+     * both end time points are equal and the start of this interval is after
+     * the start of the other one?
+     */
+    public function finishes(self $other): bool
+    {
+        if ((null === $this->end && null !== $other->end) ||
+            (null !== $this->end && null === $other->end)) {
+            return false;
+        }
+
+        if ($this->end && $other->end && !$this->end->isEqualTo($other->end)) {
+            return false;
+        }
+
+        if ($other->hasInfiniteStart()) {
+            return true;
+        }
+
+        if ($this->hasInfiniteStart()) {
+            return false;
+        }
+
+        return $other->getFiniteStart()->isBefore($this->getFiniteStart());
+    }
+
+    /**
+     * ALLEN-relation: Equivalent to $other->finishes($this).
+     */
+    public function finishedBy(self $other): bool
+    {
+        return $other->finishes($this);
+    }
+
+    /**
+     * ALLEN-relation: Does this interval start the other one such that both
+     * start time points are equal and the end of this interval is before the
+     * end of the other one?
+     */
+    public function starts(self $other): bool
+    {
+        if ((null === $this->start && null !== $other->start) ||
+            (null !== $this->start && null === $other->start)) {
+            return false;
+        }
+
+        if ($this->start && $other->start && !$this->start->isEqualTo($other->start)) {
+            return false;
+        }
+
+        if ($other->hasInfiniteEnd() && !$this->hasInfiniteEnd()) {
+            return true;
+        }
+
+        if ($this->hasInfiniteEnd()) {
+            return false;
+        }
+
+        return $other->getFiniteEnd()->isAfter($this->getFiniteEnd());
+    }
+
+    /**
+     * ALLEN-relation: Equivalent to $other->starts($this).
+     */
+    public function startedBy(self $other): bool
+    {
+        return $other->starts($this);
+    }
+
+    /**
+     * ALLEN-relation: Does this interval enclose the other one such that
+     * this start is before the start of the other one and this end is after
+     * the end of the other one?
+     */
+    public function encloses(self $other): bool
+    {
+        if (!$other->isFinite()) {
+            return false;
+        }
+
+        if ($this->hasInfiniteStart() && $other->getFiniteEnd()->isBefore($this->getFiniteEnd())) {
+            return true;
+        }
+
+        if ($this->hasInfiniteStart() && !$other->getFiniteEnd()->isBefore($this->getFiniteEnd())) {
+            return false;
+        }
+
+        if ($this->hasInfiniteEnd() && $other->getFiniteStart()->isAfter($this->getFiniteStart())) {
+            return true;
+        }
+
+        if ($this->hasInfiniteEnd() && !$other->getFiniteStart()->isAfter($this->getFiniteStart())) {
+            return false;
+        }
+
+        if ($other->getFiniteStart()->isAfter($this->getFiniteStart()) &&
+            $other->getFiniteEnd()->isBefore($this->getFiniteEnd())
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * ALLEN-relation: Equivalent to $other->encloses($this).
+     */
+    public function enclosedBy(self $other): bool
+    {
+        return $other->encloses($this);
+    }
+
+    /**
+     * ALLEN-relation: Does this interval overlaps the other one such that
+     * the start of this interval is still before the start of the other
+     * one?
+     */
+    public function overlaps(self $other): bool
+    {
+        return
+            (
+                $this->hasInfiniteStart() ||
+                $other->hasInfiniteEnd() ||
+                (
+                    $this->getFiniteStart()->isBefore($other->getFiniteEnd()) &&
+                    $this->getFiniteStart()->isBefore($other->getFiniteStart())
+                )
+            ) &&
+            (
+                $this->hasInfiniteEnd() ||
+                $other->hasInfiniteStart() ||
+                (
+                    $this->getFiniteEnd()->isAfter($other->getFiniteStart()) &&
+                    $this->getFiniteEnd()->isBefore($other->getFiniteEnd())
+                )
+            );
+    }
+
+    /**
+     * ALLEN-relation: Equivalent to $other->overlaps($this).
+     */
+    public function overlappedBy(self $other): bool
+    {
+        return $other->overlaps($this);
+    }
+
+    /**
+     * Queries if this interval intersects the other one such that there is at least one common time point.
+     *
+     * @param self $other another interval which might have an intersection with this interval
+     *
+     * @return bool "true" if there is an non-empty intersection of this interval and the other one else "false"
+     */
+    public function intersects(self $other): bool
+    {
+        return
+            (
+                $this->hasInfiniteStart() ||
+                $other->hasInfiniteEnd() ||
+                $this->getFiniteStart()->isBefore($other->getFiniteEnd())) &&
+            (
+                $this->hasInfiniteEnd() ||
+                $other->hasInfiniteStart() ||
+                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+            );
+    }
+
+    /**
+     * Queries if this interval abuts the other one such that there is neither any overlap nor any gap between.
+     *
+     * Equivalent to the expression {@code this.meets(other) ^ this.metBy(other)}. Empty intervals never abut.
+     */
+    public function abuts(self $other): bool
+    {
+        return (bool) ($this->meets($other) ^ $this->metBy($other));
+    }
+
+    /**
+     * Changes this interval to an empty interval with the same
+     * start anchor.
+     *
+     * @return self empty interval with same start (anchor always inclusive)
+     */
+    public function collapse(): self
+    {
+        if ($this->hasInfiniteStart()) {
+            throw new \RuntimeException('An interval with infinite start cannot be collapsed.');
+        }
+
+        return self::between($this->start, $this->start);
+    }
+
+    /**
+     * Obtains the intersection of this interval and other one if present.
+     *
+     * @param self $other another interval which might have an intersection with this interval
+     *
+     * @return  self|null wrapper around the found intersection or null
+     */
+    public function findIntersection(self $other): ?self
+    {
+        if ($this->intersects($other)) {
+            if ($this->hasInfiniteStart() || $other->hasInfiniteStart()) {
+                $start = null;
+            } else {
+                $start = LocalDateTime::maxOf($this->getFiniteStart(), $other->getFiniteStart());
+            }
+
+            if ($this->hasInfiniteEnd() || $other->hasInfiniteEnd()) {
+                $end = null;
+            } else {
+                $end = LocalDateTime::minOf($this->getFiniteEnd(), $other->getFiniteEnd());
+            }
+
+            return self::between($start, $end);
+        }
+
+        return null;
+    }
+
+    /**
+     * Compares the boundaries (start and end) of this and the other interval.
+     */
+    public function isEqualTo(self $other): bool
+    {
+        if ($this->hasInfiniteStart() !== $other->hasInfiniteStart() ||
+            $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()) {
+            return false;
+        }
+
+        return
+            ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart())) &&
+            ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()))
+        ;
+    }
+
+    /**
+     * Determines if this interval has finite boundaries.
+     */
+    public function isFinite(): bool
+    {
+        return !($this->hasInfiniteStart() || $this->hasInfiniteEnd());
+    }
+
+    /**
+     * Determines if this interval has infinite start boundary.
+     */
+    public function hasInfiniteStart(): bool
+    {
+        return null === $this->start;
+    }
+
+    /**
+     * Determines if this interval has infinite end boundary.
+     */
+    public function hasInfiniteEnd(): bool
+    {
+        return null === $this->end;
     }
 }
