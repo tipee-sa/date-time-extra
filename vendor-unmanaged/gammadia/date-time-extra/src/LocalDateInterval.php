@@ -107,7 +107,7 @@ class LocalDateInterval
      */
     public function inTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
     {
-        return $this->toFullDays()->inTimezone($timezoneId);
+        return $this->toFullDays()->atTimeZone($timezoneId);
     }
 
     /**

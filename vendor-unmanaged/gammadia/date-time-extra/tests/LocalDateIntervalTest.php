@@ -100,19 +100,6 @@ class LocalDateIntervalTest extends TestCase
         $this->interval('----|2009')->getLengthInDays();
     }
 
-    public function testGetDurationInYearsMonthsDays(): void
-    {
-        self::assertTrue(Period::of(1, 0, 0)->isEqualTo($this->interval('2009|2010')->getDurationInYearsMonthsDays()));
-        self::assertTrue(Period::of(1, 0, 0)->isEqualTo($this->interval('2012|2013')->getDurationInYearsMonthsDays()));
-        self::assertTrue(Period::of(1, 1, 0)->isEqualTo(LocalDateInterval::between(LocalDate::of(2010, 1, 1), LocalDate::of(2011, 2, 1))->getDurationInYearsMonthsDays()));
-        self::assertTrue(Period::of(1, 1, 0)->isEqualTo(LocalDateInterval::between(LocalDate::of(2012, 1, 1), LocalDate::of(2013, 2, 1))->getDurationInYearsMonthsDays()));
-        self::assertTrue(Period::of(1, 1, 1)->isEqualTo(LocalDateInterval::between(LocalDate::of(2010, 1, 1), LocalDate::of(2011, 2, 2))->getDurationInYearsMonthsDays()));
-        self::assertTrue(Period::of(1, 1, 1)->isEqualTo(LocalDateInterval::between(LocalDate::of(2012, 1, 1), LocalDate::of(2013, 2, 2))->getDurationInYearsMonthsDays()));
-
-        $this->expectException(\RuntimeException::class);
-        $this->interval('----|2009')->getDurationInYearsMonthsDays();
-    }
-
     public function testGetPeriod()
     {
         $interval =
