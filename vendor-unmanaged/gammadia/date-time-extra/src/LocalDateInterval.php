@@ -9,6 +9,7 @@ use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
+use Brick\DateTime\TimeZone;
 use Brick\DateTime\TimeZoneRegion;
 use Symfony\Component\String\ByteString;
 
@@ -67,18 +68,20 @@ class LocalDateInterval
     }
 
     /**
-     * Obtains the current calendar week based on given clock, time zone and first day of week.
+     * Obtains the current calendar week based on first day of week.
      */
-    public static function ofCurrentWeek(LocalDate $firstDate): self
+    public static function ofCurrentWeek(DayOfWeek $firstDate): self
     {
-        if (!$firstDate->getDayOfWeek()->is(DayOfWeek::MONDAY)) {
-            throw new \RuntimeException('The first date should be a Monday.');
+        $date = LocalDate::now(TimeZone::parse('Europe/Zurich'));
+
+        while ($date->getDayOfWeek() !== $firstDate) {
+            $date = $date->minusDays(1);
         }
 
-        return self::between($firstDate, $firstDate->plusDays(6));
+        return self::between($date, $date->plusDays(6));
     }
 
-    /**
+    /**Time
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
      */
@@ -90,12 +93,14 @@ class LocalDateInterval
         /** @var LocalDateTime $end */
         $end = null;
 
-        if (!$this->hasInfiniteStart()) {
-            $start = $this->getFiniteStart()->atTime(LocalTime::of(0, 0));
+        if (!$this->hasInfiniteEnd() && !$this->hasInfiniteStart() && $this->getFiniteEnd()->isEqualTo($this->getFiniteStart())) {
+            $end = $this->getFiniteEnd()->atTime(LocalTime::of(23, 59, 59));
+        } elseif (!$this->hasInfiniteEnd()) {
+            $end = $this->getFiniteEnd()->atTime(LocalTime::of(0, 0, 0));
         }
 
-        if (!$this->hasInfiniteEnd()) {
-            $end = $this->getFiniteEnd()->atTime(LocalTime::of(0, 0));
+        if (!$this->hasInfiniteStart()) {
+            $start = $this->getFiniteStart()->atTime(LocalTime::of(0, 0, 0));
         }
 
         return LocalDateTimeInterval::between($start, $end);
@@ -119,7 +124,7 @@ class LocalDateInterval
             throw new \RuntimeException('An infinite interval has no finite duration.');
         }
 
-        return $this->start->toDateTime()->diff($this->end->toDateTime())->days;
+        return $this->getFiniteStart()->daysUntil($this->getFiniteEnd()) + 1;
     }
 
     /**
@@ -140,30 +145,37 @@ class LocalDateInterval
     public function move(Period $period): self
     {
         return new self(
-           $this->start ? $this->start->plusPeriod($period) : null,
-           $this->end ? $this->end->plusPeriod($period) : null
-       );
+            $this->start ? $this->start->plusPeriod($period) : null,
+            $this->end ? $this->end->plusPeriod($period) : null
+        );
     }
 
     /**
      * Obtains a stream iterating over every calendar date between given interval boundaries.
+     *
+     * @return \Traversable<LocalDate>
      */
-    public static function iterateDaily(LocalDate $start, LocalDate $end): \Traversable {
-        if (!$start || !$end) {
-            throw new \RuntimeException("Iterate is not supported for infinite interval.");
+    public static function iterateDaily(LocalDate $start, LocalDate $end): \Traversable
+    {
+        $interval = self::between($start, $end);
+
+        if (!$interval->isFinite()) {
+            throw new \RuntimeException('Iterate is not supported for infinite interval.');
         }
 
-        return LocalDateInterval::between($start, $end)->iterate(Period::of(0, 0, 1));
+        return $interval->iterate(Period::of(0, 0, 1));
     }
 
     /**
      * Obtains a stream iterating over every calendar date which is the result of addition of given duration
      * to start until the end of this interval is reached.
+     *
+     * @return \Traversable<LocalDate>
      */
-
-    public function iterate(Period $period): \Traversable {
+    public function iterate(Period $period): \Traversable
+    {
         if (!$this->isFinite()) {
-            throw new \RuntimeException("Iterate is not supported for infinite interval.");
+            throw new \RuntimeException('Iterate is not supported for infinite interval.');
         }
 
         for ($start = $this->getFiniteStart(); $start->isBeforeOrEqualTo($this->getFiniteEnd());) {
@@ -176,11 +188,17 @@ class LocalDateInterval
     /**
      * Obtains a stream iterating over every calendar date of the canonical form of this interval
      * and applies given exclusion filter.
+     *
+     * @param array<DayOfWeek> $daysExcluded
+     *
+     * @return \Traversable<LocalDate>
      */
-    public function iterateExcluding(array $daysExcluded): \Traversable {
-        yield from array_filter(iterator_to_array(self::iterateDaily($this->getFiniteStart(), $this->getFiniteEnd())),
-            function(LocalDate $date) use ($daysExcluded) {
-                return !in_array($date->getDayOfWeek(), $daysExcluded);
+    public function iterateExcluding(array $daysExcluded): \Traversable
+    {
+        yield from array_filter(
+            iterator_to_array(self::iterateDaily($this->getFiniteStart(), $this->getFiniteEnd())),
+            function (LocalDate $date) use ($daysExcluded): bool {
+                return !in_array($date->getDayOfWeek(), $daysExcluded, true);
             }
         );
     }
@@ -188,16 +206,19 @@ class LocalDateInterval
     /**
      * Obtains a stream iterating over every calendar date which is the result of addition of given duration
      * in week-based units to start until the end of this interval is reached.
+     *
+     * @return \Traversable<LocalDate>
      */
-    public function iterateWeekBased(int $years, int $weeks, int $days): \Traversable {
+    public function iterateWeekBased(int $years, int $weeks, int $days): \Traversable
+    {
         if (0 > $years || 0 > $weeks || 0 > $days) {
-            throw new \RuntimeException("Found illegal negative duration component.");
+            throw new \RuntimeException('Found illegal negative duration component.');
         }
 
         $period = Period::of($years, 0, $weeks * LocalTime::DAYS_PER_WEEK + $days);
 
         if ($period->isZero()) {
-            throw new \RuntimeException("Cannot iterate with an empty Period.");
+            throw new \RuntimeException('Cannot iterate with an empty Period.');
         }
 
         return $this->iterate($period);
@@ -261,9 +282,11 @@ class LocalDateInterval
      */
     public function toString(): string
     {
-        return sprintf('%s/%s',
+        return sprintf(
+            '%s/%s',
             $this->hasInfiniteStart() ? InfinityStyle::SYMBOL : $this->start,
-            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end);
+            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end
+        );
     }
 
     public function getStart(): ?LocalDate
@@ -309,7 +332,7 @@ class LocalDateInterval
      */
     public function isBefore(LocalDate $date): bool
     {
-        if($this->hasInfiniteEnd()) {
+        if ($this->hasInfiniteEnd()) {
             return false;
         }
 
@@ -352,7 +375,8 @@ class LocalDateInterval
     public function contains(LocalDate $date): bool
     {
         return ($this->hasInfiniteStart() || !$this->getFiniteStart()->isAfter($date))
-            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($date));     }
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($date));
+    }
 
     public function containsInterval(self $other): bool
     {
@@ -658,8 +682,8 @@ class LocalDateInterval
 
     public function getFiniteEnd(): LocalDate
     {
-        if ($this->hasInfiniteEnd()) {
-            throw new \RuntimeException('getFiniteEnd() method can not return null.');
+        if (null === $this->end) {
+            throw new \RuntimeException('This interval has a non finite end.');
         }
 
         return $this->end;
@@ -667,8 +691,8 @@ class LocalDateInterval
 
     public function getFiniteStart(): LocalDate
     {
-        if ($this->hasInfiniteStart()) {
-            throw new \RuntimeException('getFiniteStart() method can not return null.');
+        if (null === $this->start) {
+            throw new \RuntimeException('This interval has a non finite start.');
         }
 
         return $this->start;

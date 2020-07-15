@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Gammadia\DateTimeExtra\Test\Unit;
 
-use _HumbugBox4ff14b593cb3\Nette\InvalidArgumentException;
 use Brick\DateTime\DayOfWeek;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
-use Brick\DateTime\Parser\DateTimeParseException;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
 use Gammadia\DateTimeExtra\IntervalParseException;
@@ -54,14 +52,15 @@ class LocalDateIntervalTest extends TestCase
 
     public function testOfCurrentWeek(): void
     {
-        $start = LocalDate::of(2020, 6, 1);
-        $end = LocalDate::of(2020, 6, 7);
-
-        self::assertTrue(LocalDateInterval::between($start, $end)->equals(LocalDateInterval::ofCurrentWeek($start)));
-        self::assertFalse(LocalDateInterval::between($start, $end)->equals(LocalDateInterval::ofCurrentWeek($start->plusDays(7))));
-
-        $this->expectException(\RuntimeException::class);
-        LocalDateInterval::ofCurrentWeek($start->plusDays(1));
+        self::assertCount(7, LocalDateInterval::ofCurrentWeek(DayOfWeek::monday())->iterate(Period::of(0, 0, 1)));
+        self::assertCount(7, LocalDateInterval::ofCurrentWeek(DayOfWeek::wednesday())->iterate(Period::of(0, 0, 1)));
+        self::assertCount(7, LocalDateInterval::ofCurrentWeek(DayOfWeek::sunday())->iterate(Period::of(0, 0, 1)));
+        self::assertTrue(LocalDateInterval::ofCurrentWeek(DayOfWeek::monday())->getFiniteStart()->getDayOfWeek()->isEqualTo(DayOfWeek::monday()));
+        self::assertTrue(LocalDateInterval::ofCurrentWeek(DayOfWeek::wednesday())->getFiniteStart()->getDayOfWeek()->isEqualTo(DayOfWeek::wednesday()));
+        self::assertTrue(LocalDateInterval::ofCurrentWeek(DayOfWeek::sunday())->getFiniteStart()->getDayOfWeek()->isEqualTo(DayOfWeek::sunday()));
+        self::assertTrue(LocalDateInterval::ofCurrentWeek(DayOfWeek::monday())->getFiniteEnd()->getDayOfWeek()->isEqualTo(DayOfWeek::sunday()));
+        self::assertTrue(LocalDateInterval::ofCurrentWeek(DayOfWeek::wednesday())->getFiniteEnd()->getDayOfWeek()->isEqualTo(DayOfWeek::tuesday()));
+        self::assertTrue(LocalDateInterval::ofCurrentWeek(DayOfWeek::sunday())->getFiniteEnd()->getDayOfWeek()->isEqualTo(DayOfWeek::saturday()));
     }
 
     public function testToFullDays(): void
@@ -80,7 +79,7 @@ class LocalDateIntervalTest extends TestCase
         $saoPaulo = TimeZoneRegion::of('America/Sao_Paulo');
 
         $ldt1 = LocalDateTime::of(2016, 10, 16);
-        $ldt2 = LocalDateTime::of(2016, 10, 16);
+        $ldt2 = LocalDateTime::of(2016, 10, 17);
 
         self::assertTrue(
             LocalDateInterval::between($ldt1->getDate(), $ldt2->getDate())->inTimeZone($saoPaulo)->equals(
@@ -91,16 +90,17 @@ class LocalDateIntervalTest extends TestCase
 
     public function testLengthInDays(): void
     {
-        self::assertSame(365, $this->interval('2009|2010')->getLengthInDays());
-        self::assertSame(366, $this->interval('2012|2013')->getLengthInDays());
-        self::assertSame(730, $this->interval('2009|2011')->getLengthInDays());
-        self::assertSame(731, $this->interval('2012|2014')->getLengthInDays());
+        self::assertSame(1, $this->interval('2009|2009')->getLengthInDays());
+        self::assertSame(366, $this->interval('2009|2010')->getLengthInDays());
+        self::assertSame(367, $this->interval('2012|2013')->getLengthInDays());
+        self::assertSame(731, $this->interval('2009|2011')->getLengthInDays());
+        self::assertSame(732, $this->interval('2012|2014')->getLengthInDays());
 
         $this->expectException(\RuntimeException::class);
         $this->interval('----|2009')->getLengthInDays();
     }
 
-    public function testGetPeriod()
+    public function testGetPeriod(): void
     {
         $interval =
             LocalDateInterval::between(
@@ -160,7 +160,7 @@ class LocalDateIntervalTest extends TestCase
     /**
      * @dataProvider iterateDailyProvider
      */
-    public function testIterateDaily(int $expectedCount, LocalDate $start, LocalDate $end)
+    public function testIterateDaily(int $expectedCount, LocalDate $start, LocalDate $end): void
     {
         self::assertCount(
             $expectedCount,
@@ -170,7 +170,10 @@ class LocalDateIntervalTest extends TestCase
         );
     }
 
-    public function iterateDailyProvider()
+    /**
+     * @return iterable<array<mixed>>
+     */
+    public function iterateDailyProvider(): iterable
     {
         yield [367, LocalDate::of(2012, 1, 1), LocalDate::of(2013, 1, 1)];
         yield [366, LocalDate::of(2010, 1, 1), LocalDate::of(2011, 1, 1)];
@@ -183,7 +186,7 @@ class LocalDateIntervalTest extends TestCase
     /**
      * @dataProvider iterateProvider
      */
-    public function testIterate(int $expectedCount, string $strPeriod)
+    public function testIterate(int $expectedCount, string $strPeriod): void
     {
         self::assertCount(
             $expectedCount,
@@ -195,7 +198,10 @@ class LocalDateIntervalTest extends TestCase
         );
     }
 
-    public function iterateProvider()
+    /**
+     * @return iterable<array<mixed>>
+     */
+    public function iterateProvider(): iterable
     {
         yield [366, 'P1D'];
         yield [53, 'P1W'];
@@ -208,9 +214,11 @@ class LocalDateIntervalTest extends TestCase
     }
 
     /**
+     * @param array<DayOfWeek> $excludedDays
+     *
      * @dataProvider iterateExcludingProvider
      */
-    public function testIterateExcluding(int $expectedCount, LocalDateInterval $interval, array $excludedDays)
+    public function testIterateExcluding(int $expectedCount, LocalDateInterval $interval, array $excludedDays): void
     {
         self::assertCount(
             $expectedCount,
@@ -220,7 +228,10 @@ class LocalDateIntervalTest extends TestCase
         );
     }
 
-    public function iterateExcludingProvider()
+    /**
+     * @return iterable<array<mixed>>
+     */
+    public function iterateExcludingProvider(): iterable
     {
         yield [366, $this->interval('2011|2012'), []];
         yield [262, $this->interval('2012|2013'), [DayOfWeek::sunday(), DayOfWeek::saturday()]];
@@ -229,14 +240,14 @@ class LocalDateIntervalTest extends TestCase
         yield [313, $this->interval('2011|2012'), [DayOfWeek::sunday()]];
         yield [0, $this->interval('2011|2012'), DayOfWeek::all()];
 
-        yield [10, LocalDateInterval::between(LocalDate::of(2011,1,1), LocalDate::of(2011, 2,1)), [DayOfWeek::monday(), DayOfWeek::tuesday(), DayOfWeek::wednesday(), DayOfWeek::thursday(), DayOfWeek::friday()]];
-        yield [5, LocalDateInterval::ofCurrentWeek(LocalDate::of(2011, 1, 3)), [DayOfWeek::sunday(), DayOfWeek::saturday()]];
+        yield [10, LocalDateInterval::between(LocalDate::of(2011, 1, 1), LocalDate::of(2011, 2, 1)), [DayOfWeek::monday(), DayOfWeek::tuesday(), DayOfWeek::wednesday(), DayOfWeek::thursday(), DayOfWeek::friday()]];
+        yield [5, LocalDateInterval::ofCurrentWeek(DayOfWeek::monday()), [DayOfWeek::sunday(), DayOfWeek::saturday()]];
     }
 
     /**
      * @dataProvider iterateWeekBasedProvider
      */
-    public function testIterateWeekBased(int $expectedCount, LocalDateInterval $interval, int $years, int $weeks, int $days)
+    public function testIterateWeekBased(int $expectedCount, LocalDateInterval $interval, int $years, int $weeks, int $days): void
     {
         self::assertCount(
             $expectedCount,
@@ -246,7 +257,10 @@ class LocalDateIntervalTest extends TestCase
         );
     }
 
-    public function iterateWeekBasedProvider()
+    /**
+     * @return iterable<array<mixed>>
+     */
+    public function iterateWeekBasedProvider(): iterable
     {
         yield [367, $this->interval('2012|2013'), 0, 0, 1];
         yield [366, $this->interval('2011|2012'), 0, 0, 1];
