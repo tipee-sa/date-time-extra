@@ -1,0 +1,6 @@
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping" >
+    <embeddable name="Gammadia\DateTimeExtra\ZonedDateTimeInterval">
+        <embedded name="start" class="Brick\DateTime\ZonedDateTime" />
+        <embedded name="end" class="Brick\DateTime\ZonedDateTime" />
+    </embeddable>
+</doctrine-mapping>
