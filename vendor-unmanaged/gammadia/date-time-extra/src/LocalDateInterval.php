@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Gammadia\DateTimeExtra;
 
-use Brick\DateTime\DayOfWeek;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
-use Brick\DateTime\TimeZone;
 use Brick\DateTime\TimeZoneRegion;
 use Symfony\Component\String\ByteString;
 
@@ -67,20 +65,6 @@ class LocalDateInterval
         return self::between($date, $date);
     }
 
-    /**
-     * Obtains the current calendar week based on first day of week.
-     */
-    public static function ofCurrentWeek(DayOfWeek $firstDate): self
-    {
-        $date = LocalDate::now(TimeZone::parse('Europe/Zurich'));
-
-        while ($date->getDayOfWeek() !== $firstDate) {
-            $date = $date->minusDays(1);
-        }
-
-        return self::between($date, $date->plusDays(6));
-    }
-
     /**Time
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
@@ -94,7 +78,7 @@ class LocalDateInterval
         $end = null;
 
         if (!$this->hasInfiniteEnd() && !$this->hasInfiniteStart() && $this->getFiniteEnd()->isEqualTo($this->getFiniteStart())) {
-            $end = $this->getFiniteEnd()->atTime(LocalTime::of(23, 59, 59));
+            $end = $this->getFiniteEnd()->plusDays(1)->atTime(LocalTime::of(0, 0, 0));
         } elseif (!$this->hasInfiniteEnd()) {
             $end = $this->getFiniteEnd()->atTime(LocalTime::of(0, 0, 0));
         }
@@ -110,7 +94,7 @@ class LocalDateInterval
      * Converts this instance to a moment interval with date boundaries mapped
      * to the midnight cycle in given time zone.
      */
-    public function inTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
+    public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
     {
         return $this->toFullDays()->atTimeZone($timezoneId);
     }
@@ -136,7 +120,7 @@ class LocalDateInterval
             throw new \RuntimeException('An infinite interval has no finite duration.');
         }
 
-        return Period::between($this->getFiniteStart(), $this->getFiniteEnd());
+        return Period::between($this->getFiniteStart(), $this->getFiniteEnd()->plusDays(1));
     }
 
     /**
@@ -159,11 +143,7 @@ class LocalDateInterval
     {
         $interval = self::between($start, $end);
 
-        if (!$interval->isFinite()) {
-            throw new \RuntimeException('Iterate is not supported for infinite interval.');
-        }
-
-        return $interval->iterate(Period::of(0, 0, 1));
+        return $interval->iterate(Period::ofDays(1));
     }
 
     /**
@@ -178,50 +158,12 @@ class LocalDateInterval
             throw new \RuntimeException('Iterate is not supported for infinite interval.');
         }
 
-        for ($start = $this->getFiniteStart(); $start->isBeforeOrEqualTo($this->getFiniteEnd());) {
+        for ($start = $this->getFiniteStart();
+             $start->isBeforeOrEqualTo($this->getFiniteEnd());
+             $start = $start->plusPeriod($period)
+        ) {
             yield $start;
-
-            $start = $start->plusPeriod($period);
         }
-    }
-
-    /**
-     * Obtains a stream iterating over every calendar date of the canonical form of this interval
-     * and applies given exclusion filter.
-     *
-     * @param array<DayOfWeek> $daysExcluded
-     *
-     * @return \Traversable<LocalDate>
-     */
-    public function iterateExcluding(array $daysExcluded): \Traversable
-    {
-        yield from array_filter(
-            iterator_to_array(self::iterateDaily($this->getFiniteStart(), $this->getFiniteEnd())),
-            function (LocalDate $date) use ($daysExcluded): bool {
-                return !in_array($date->getDayOfWeek(), $daysExcluded, true);
-            }
-        );
-    }
-
-    /**
-     * Obtains a stream iterating over every calendar date which is the result of addition of given duration
-     * in week-based units to start until the end of this interval is reached.
-     *
-     * @return \Traversable<LocalDate>
-     */
-    public function iterateWeekBased(int $years, int $weeks, int $days): \Traversable
-    {
-        if (0 > $years || 0 > $weeks || 0 > $days) {
-            throw new \RuntimeException('Found illegal negative duration component.');
-        }
-
-        $period = Period::of($years, 0, $weeks * LocalTime::DAYS_PER_WEEK + $days);
-
-        if ($period->isZero()) {
-            throw new \RuntimeException('Cannot iterate with an empty Period.');
-        }
-
-        return $this->iterate($period);
     }
 
     /**
@@ -316,18 +258,6 @@ class LocalDateInterval
     }
 
     /**
-     * Determines if this interval is empty.
-     */
-    public function isEmpty(): bool
-    {
-        if ($this->isFinite()) {
-            return 0 === $this->getFiniteStart()->compareTo($this->getFiniteEnd());
-        }
-
-        return false;
-    }
-
-    /**
      * Is this interval before the given time point?
      */
     public function isBefore(LocalDate $date): bool
@@ -374,8 +304,8 @@ class LocalDateInterval
      */
     public function contains(LocalDate $date): bool
     {
-        return ($this->hasInfiniteStart() || !$this->getFiniteStart()->isAfter($date))
-            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($date));
+        return ($this->hasInfiniteStart() || $this->getFiniteStart()->isBeforeOrEqualTo($date))
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfterOrEqualTo($date));
     }
 
     public function containsInterval(self $other): bool
@@ -409,7 +339,7 @@ class LocalDateInterval
     }
 
     /**
-     * Changes this interval to an empty interval with the same
+     * Changes this interval to an 1-day interval with the same
      * start anchor.
      */
     public function collapse(): self
@@ -449,9 +379,9 @@ class LocalDateInterval
         }
 
         $endA = $this->getFiniteEnd();
-        $startB = $other->getStart();
+        $startB = $other->getFiniteStart();
 
-        return $startB ? $endA->isBefore($startB) : true;
+        return $endA->isBefore($startB->minusDays(1));
     }
 
     public function precededBy(self $other): bool
@@ -470,9 +400,9 @@ class LocalDateInterval
         }
 
         $endA = $this->getFiniteEnd();
-        $startB = $other->getStart();
+        $startB = $other->getFiniteStart();
 
-        return $startB ? $endA->isEqualTo($startB) : true;
+        return $endA->isEqualTo($startB->minusDays(1));
     }
 
     public function metBy(self $other): bool
@@ -488,22 +418,12 @@ class LocalDateInterval
     public function overlaps(self $other): bool
     {
         return
-            (
-                $this->hasInfiniteStart() ||
-                $other->hasInfiniteEnd() ||
-                (
-                    $this->getFiniteStart()->isBefore($other->getFiniteEnd()) &&
-                    $this->getFiniteStart()->isBefore($other->getFiniteStart())
-                )
-            ) &&
-            (
-                $this->hasInfiniteEnd() ||
-                $other->hasInfiniteStart() ||
-                (
-                    $this->getFiniteEnd()->isAfter($other->getFiniteStart()) &&
-                    $this->getFiniteEnd()->isBefore($other->getFiniteEnd())
-                )
-            );
+
+                !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
+                ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
+                ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
+                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+        ;
     }
 
     public function overlappedBy(self $other): bool
@@ -527,12 +447,12 @@ class LocalDateInterval
             return false;
         }
 
-        if ($other->hasInfiniteStart()) {
-            return true;
-        }
-
         if ($this->hasInfiniteStart()) {
             return false;
+        }
+
+        if ($other->hasInfiniteStart()) {
+            return true;
         }
 
         return $other->getFiniteStart()->isBefore($this->getFiniteStart());
@@ -625,11 +545,11 @@ class LocalDateInterval
             (
                 $this->hasInfiniteStart() ||
                 $other->hasInfiniteEnd() ||
-                $this->getFiniteStart()->isBefore($other->getFiniteEnd())) &&
+                $this->getFiniteStart()->isBeforeOrEqualTo($other->getFiniteEnd())) &&
             (
                 $this->hasInfiniteEnd() ||
                 $other->hasInfiniteStart() ||
-                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+                $this->getFiniteEnd()->isAfterOrEqualTo($other->getFiniteStart())
             );
     }
 

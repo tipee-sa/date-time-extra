@@ -587,22 +587,12 @@ class LocalDateTimeInterval
     public function overlaps(self $other): bool
     {
         return
-            (
-                $this->hasInfiniteStart() ||
-                $other->hasInfiniteEnd() ||
-                (
-                    $this->getFiniteStart()->isBefore($other->getFiniteEnd()) &&
-                    $this->getFiniteStart()->isBefore($other->getFiniteStart())
-                )
-            ) &&
-            (
-                $this->hasInfiniteEnd() ||
-                $other->hasInfiniteStart() ||
-                (
-                    $this->getFiniteEnd()->isAfter($other->getFiniteStart()) &&
-                    $this->getFiniteEnd()->isBefore($other->getFiniteEnd())
-                )
-            );
+
+                !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
+                ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
+                ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
+                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+            ;
     }
 
     /**
