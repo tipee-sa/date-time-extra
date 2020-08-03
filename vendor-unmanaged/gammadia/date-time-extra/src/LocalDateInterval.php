@@ -418,12 +418,11 @@ class LocalDateInterval
     public function overlaps(self $other): bool
     {
         return
-
-                !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
-                ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
-                ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
-                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
-        ;
+            !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
+            ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
+            ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
+            $this->getFiniteEnd()->isAfter($other->getFiniteStart()
+        );
     }
 
     public function overlappedBy(self $other): bool
@@ -560,13 +559,13 @@ class LocalDateInterval
     {
         if ($this->intersects($other)) {
             if ($this->hasInfiniteStart() || $other->hasInfiniteStart()) {
-                $start = null;
+                $start = $this->hasInfiniteStart() ? ($other->hasInfiniteStart() ? null : $other->getFiniteStart()) : $this->getFiniteStart();
             } else {
                 $start = LocalDate::maxOf($this->getFiniteStart(), $other->getFiniteStart());
             }
 
             if ($this->hasInfiniteEnd() || $other->hasInfiniteEnd()) {
-                $end = null;
+                $end = $this->hasInfiniteEnd() ? ($other->hasInfiniteEnd() ? null : $other->getFiniteEnd()) : $this->getFiniteEnd();
             } else {
                 $end = LocalDate::minOf($this->getFiniteEnd(), $other->getFiniteEnd());
             }
