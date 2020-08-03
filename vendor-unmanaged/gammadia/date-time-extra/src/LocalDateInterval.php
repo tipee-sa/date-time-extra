@@ -421,8 +421,8 @@ class LocalDateInterval
             !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
             ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
             ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
-            $this->getFiniteEnd()->isAfter($other->getFiniteStart()
-        );
+            $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+        ;
     }
 
     public function overlappedBy(self $other): bool
