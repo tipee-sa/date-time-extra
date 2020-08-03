@@ -13,10 +13,14 @@ use ReflectionClass;
 
 final class LocalDateTypeTest extends TestCase
 {
-    /** @var LocalDateType */
+    /**
+     * @var LocalDateType
+     */
     private $type;
 
-    /** @var AbstractPlatform */
+    /**
+     * @var AbstractPlatform
+     */
     private $platform;
 
     protected function setUp(): void

@@ -12,10 +12,14 @@ use ReflectionClass;
 
 final class InstantTypeTest extends TestCase
 {
-    /** @var InstantType */
+    /**
+     * @var InstantType
+     */
     private $type;
 
-    /** @var AbstractPlatform */
+    /**
+     * @var AbstractPlatform
+     */
     private $platform;
 
     protected function setUp(): void

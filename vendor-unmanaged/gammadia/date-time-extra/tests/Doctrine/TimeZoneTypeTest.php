@@ -13,10 +13,14 @@ use ReflectionClass;
 
 class TimeZoneTypeTest extends TestCase
 {
-    /** @var TimeZoneType */
+    /**
+     * @var TimeZoneType
+     */
     private $type;
 
-    /** @var AbstractPlatform */
+    /**
+     * @var AbstractPlatform
+     */
     private $platform;
 
     protected function setUp(): void

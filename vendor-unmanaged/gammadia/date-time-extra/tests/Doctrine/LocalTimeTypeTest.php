@@ -13,10 +13,14 @@ use ReflectionClass;
 
 class LocalTimeTypeTest extends TestCase
 {
-    /** @var LocalTimeType */
+    /**
+     * @var LocalTimeType
+     */
     private $type;
 
-    /** @var AbstractPlatform */
+    /**
+     * @var AbstractPlatform
+     */
     private $platform;
 
     protected function setUp(): void

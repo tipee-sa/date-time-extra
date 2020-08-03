@@ -10,7 +10,8 @@ use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class InstantIntervalNormalizer // implements NormalizerInterface, DenormalizerInterface TODO: Remove comment -> temporary for fixing PHPStan errors
+// implements NormalizerInterface, DenormalizerInterface TODO: Remove comment -> temporary for fixing PHPStan errors
+class InstantIntervalNormalizer
 {
 //    public function normalize($object, ?string $format = null, array $context = []): string TODO: Remove comment -> temporary for fixing PHPStan errors
 //    {
