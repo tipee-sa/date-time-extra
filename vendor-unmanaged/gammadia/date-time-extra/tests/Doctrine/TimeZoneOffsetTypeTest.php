@@ -44,11 +44,8 @@ final class TimeZoneOffsetTypeTest extends TestCase
         );
     }
 
-    public function testConvertToPHPValue(): void
+    public function testGetName(): void
     {
-        /** @var TimeZoneOffset $timeZoneOffset */
-        $timeZoneOffset = $this->type->convertToPHPValue('+01:00', $this->platform);
-
-        self::assertSame('+01:00', $timeZoneOffset->getId());
+        self::assertSame('timezone_offset_type', $this->type->getName());
     }
 }

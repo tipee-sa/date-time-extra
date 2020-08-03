@@ -25,10 +25,10 @@ final class LocalDateTimeTypeTest extends TestCase
         $this->platform = new MySqlPlatform();
     }
 
-    public function testGetSQLDeclaration()
+    public function testGetSQLDeclaration(): void
     {
         self::assertSame(
-            "DATETIME",
+            'DATETIME',
             $this->type->getSQLDeclaration([], $this->platform)
         );
     }
@@ -39,5 +39,10 @@ final class LocalDateTimeTypeTest extends TestCase
         $localDateTime = $this->type->convertToPHPValue('2019-02-02 12:30:30', $this->platform);
 
         self::assertSame('2019-02-02T12:30:30', $localDateTime->jsonSerialize());
+    }
+
+    public function testGetName(): void
+    {
+        self::assertSame('local_datetime', $this->type->getName());
     }
 }

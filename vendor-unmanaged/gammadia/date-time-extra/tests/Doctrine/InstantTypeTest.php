@@ -12,7 +12,6 @@ use ReflectionClass;
 
 final class InstantTypeTest extends TestCase
 {
-
     /** @var InstantType */
     private $type;
 
@@ -25,11 +24,13 @@ final class InstantTypeTest extends TestCase
         $this->platform = new MySqlPlatform();
     }
 
-    public function testGetSQLDeclaration()
+    public function testGetSQLDeclaration(): void
     {
-        self::assertSame(
-            "DATETIME",
-            $this->type->getSQLDeclaration([], $this->platform)
-        );
+        self::assertSame('DATETIME', $this->type->getSQLDeclaration([], $this->platform));
+    }
+
+    public function testGetName(): void
+    {
+        self::assertSame('instant', $this->type->getName());
     }
 }

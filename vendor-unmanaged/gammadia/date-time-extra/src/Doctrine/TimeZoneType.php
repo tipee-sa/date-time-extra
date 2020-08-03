@@ -36,6 +36,6 @@ class TimeZoneType extends Type
      */
     public function getName(): string
     {
-        return 'timezone_offset_type';
+        return 'timezone';
     }
 }
