@@ -339,19 +339,6 @@ class LocalDateInterval
     }
 
     /**
-     * Changes this interval to an 1-day interval with the same
-     * start anchor.
-     */
-    public function collapse(): self
-    {
-        if ($this->hasInfiniteStart()) {
-            throw new \RuntimeException('An interval with infinite past cannot be collapsed.');
-        }
-
-        return self::atomic($this->getFiniteStart());
-    }
-
-    /**
      * Compares the boundaries (start and end) and also the time axis
      * of this and the other interval.
      */
@@ -420,8 +407,8 @@ class LocalDateInterval
         return
             !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
             ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
-            ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
-            $this->getFiniteEnd()->isAfter($other->getFiniteStart())
+            ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBeforeOrEqualTo($other->getFiniteEnd())) &&
+            $this->getFiniteEnd()->isAfterOrEqualTo($other->getFiniteStart())
         ;
     }
 
