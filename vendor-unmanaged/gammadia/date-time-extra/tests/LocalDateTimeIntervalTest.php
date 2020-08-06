@@ -679,12 +679,14 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         $_this = $this;
         self::assertFalse($this->interval('----|2010')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('----|2010')->overlaps($this->interval('----|2013')));
         self::assertFalse($this->interval('2009|2010')->overlaps($this->interval('2010|2013')));
         self::assertFalse($this->interval('2013|2014')->overlaps($this->interval('2010|2013')));
         self::assertFalse($this->interval('2010|2011')->overlaps($this->interval('2010|2013')));
         self::assertFalse($this->interval('2011|2012')->overlaps($this->interval('2010|2013')));
         self::assertFalse($this->interval('2011|2014')->overlaps($this->interval('2010|2013')));
         self::assertFalse($this->interval('2013|----')->overlaps($this->interval('2010|2013')));
+        self::assertFalse($this->interval('2010|----')->overlaps($this->interval('2011|----')));
         self::assertFalse($this->interval('2013|2014')->overlaps($this->interval('2010|2013')));
         self::assertFalse($this->interval('2013|----')->overlaps($this->interval('2010|2013')));
 
@@ -696,12 +698,14 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         $_this = $this;
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('----|2010')));
+        self::assertFalse($this->interval('----|2013')->overlappedBy($this->interval('----|2010')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2009|2010')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|2014')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2010|2011')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2011|2012')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2011|2014')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|----')));
+        self::assertFalse($this->interval('2011|----')->overlappedBy($this->interval('2010|----')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|2014')));
         self::assertFalse($this->interval('2010|2013')->overlappedBy($this->interval('2013|----')));
 
