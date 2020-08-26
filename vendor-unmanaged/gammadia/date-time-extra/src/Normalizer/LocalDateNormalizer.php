@@ -18,7 +18,7 @@ class LocalDateNormalizer implements NormalizerInterface, DenormalizerInterface
      */
     public function normalize($object, ?string $format = null, array $context = []): string
     {
-        return $object->jsonSerialize();
+        return (string) $object;
     }
 
     /**

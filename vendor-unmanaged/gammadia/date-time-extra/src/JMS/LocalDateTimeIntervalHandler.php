@@ -56,7 +56,7 @@ final class LocalDateTimeIntervalHandler implements SubscribingHandlerInterface
             return LocalDateTimeInterval::parse($interval);
         } catch (IntervalParseException|RuntimeException $throwable) {
             throw new RuntimeException(
-                sprintf('Invalid period: "%s"', $interval),
+                sprintf('Invalid interval: "%s"', $interval),
                 HttpStatus::HTTP_BAD_REQUEST,
                 $throwable
             );

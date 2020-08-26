@@ -22,7 +22,7 @@ class InstantType extends Type
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
         if ($value) {
-            return LocalDateTime::parse(str_replace(' ', 'T', $value))
+            return LocalDateTime::fromDateTime(new \DateTime($value))
                 ->atTimeZone(TimeZone::utc())
                 ->getInstant();
         }
