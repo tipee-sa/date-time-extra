@@ -7,13 +7,11 @@ namespace Gammadia\DateTimeExtra\JMS;
 use forum\brain\http\HttpStatus;
 use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
-use Gammadia\Moment\Period;
 use JMS\Serializer\GraphNavigator;
 use JMS\Serializer\Handler\SubscribingHandlerInterface;
 use JMS\Serializer\JsonDeserializationVisitor;
 use JMS\Serializer\JsonSerializationVisitor;
 use RuntimeException;
-use Throwable;
 
 final class LocalDateTimeIntervalHandler implements SubscribingHandlerInterface
 {
@@ -54,7 +52,7 @@ final class LocalDateTimeIntervalHandler implements SubscribingHandlerInterface
     ): LocalDateTimeInterval {
         try {
             return LocalDateTimeInterval::parse($interval);
-        } catch (IntervalParseException|RuntimeException $throwable) {
+        } catch (IntervalParseException | RuntimeException $throwable) {
             throw new RuntimeException(
                 sprintf('Invalid interval: "%s"', $interval),
                 HttpStatus::HTTP_BAD_REQUEST,
