@@ -20,7 +20,11 @@ class LocalDateTimeType extends Type
      */
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
-        return LocalDateTime::fromDateTime(new \DateTime($value));
+        if ($value) {
+            return LocalDateTime::fromDateTime(new \DateTime($value));
+        }
+
+        return null;
     }
 
     /**

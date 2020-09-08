@@ -42,7 +42,7 @@ final class LocalDateTypeTest extends TestCase
         /** @var LocalDate $localDate */
         $localDate = $this->type->convertToPHPValue('2019-02-02', $this->platform);
 
-        self::assertSame('2019-02-02', $localDate->jsonSerialize());
+        self::assertSame('2019-02-02', (string) $localDate);
     }
 
     public function testGetName(): void

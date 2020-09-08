@@ -42,7 +42,7 @@ class LocalTimeTypeTest extends TestCase
         /** @var LocalTime $localDate */
         $localDate = $this->type->convertToPHPValue('13:37', $this->platform);
 
-        self::assertSame('13:37', $localDate->jsonSerialize());
+        self::assertSame('13:37', (string) $localDate);
     }
 
     public function testGetName(): void

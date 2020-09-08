@@ -18,7 +18,7 @@ class ZonedDateTimeNormalizer implements NormalizerInterface, DenormalizerInterf
      */
     public function normalize($object, ?string $format = null, array $context = []): string
     {
-        return $object->jsonSerialize();
+        return (string) $object;
     }
 
     /**
