@@ -10,6 +10,8 @@ use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
 use Symfony\Component\String\ByteString;
+use function Gammadia\Collections\Functional\contains;
+use function Gammadia\Collections\Functional\map;
 
 class LocalDateInterval
 {
@@ -31,6 +33,11 @@ class LocalDateInterval
 
         $this->start = $start;
         $this->end = $end;
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 
     /**
@@ -65,7 +72,33 @@ class LocalDateInterval
         return self::between($date, $date);
     }
 
-    /**Time
+    /**
+     * Creates an interval that contains (encompasses) every provided intervals
+     *
+     * @param self ...$localDateIntervals
+     *
+     * @return self|null new timestamp interval or null if the input is empty
+     */
+    public static function containerOf(self ...$localDateIntervals): ?self
+    {
+        if (empty($localDateIntervals)) {
+            return null;
+        }
+
+        $starts = map($localDateIntervals, static function (self $localDateInterval): ?LocalDate {
+            return $localDateInterval->getStart();
+        });
+        $ends = map($localDateIntervals, static function (self $localDateInterval): ?LocalDate {
+            return $localDateInterval->getEnd();
+        });
+
+        return self::between(
+            contains($starts, null, true) ? null : LocalDate::minOf(...$starts),
+            contains($ends, null, true) ? null : LocalDate::maxOf(...$ends)
+        );
+    }
+
+    /**
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
      */
