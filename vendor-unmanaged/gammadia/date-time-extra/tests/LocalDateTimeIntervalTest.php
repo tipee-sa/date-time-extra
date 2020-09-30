@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Gammadia\DateTimeExtra\Test\Unit;
 
 use Brick\DateTime\Duration;
+use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\Parser\DateTimeParseException;
 use Brick\DateTime\Period;
@@ -35,6 +36,18 @@ class LocalDateTimeIntervalTest extends TestCase
 
         self::assertSame('2016-02-28T13:20/-', $since->toString());
         self::assertSame('-/2016-02-28T13:20', $until->toString());
+    }
+
+    public function testDay(): void
+    {
+        self::assertSame(
+            '2020-01-01T00:00/2020-01-02T00:00',
+            (string) LocalDateTimeInterval::day(LocalDate::parse('2020-01-01'))
+        );
+        self::assertSame(
+            '2020-01-01T00:00/2020-01-02T00:00',
+            (string) LocalDateTimeInterval::day(LocalDateTime::parse('2020-01-01T12:00:00'))
+        );
     }
 
     public function testInUTC(): void
@@ -749,5 +762,169 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertFalse($this->interval('2012|2013')->isEqualTo($this->interval('2011|2013')));
         self::assertFalse($this->interval('----|2013')->isEqualTo($this->interval('----|2012')));
         self::assertFalse($this->interval('2012|----')->isEqualTo($this->interval('2013|----')));
+    }
+
+    /**
+     * @dataProvider containerOf
+     *
+     * @param string[] $input
+     */
+    public function testContainerOf(array $input, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateTimeInterval::containerOf(
+                ...map($input, static function (string $timeRange): LocalDateTimeInterval {
+                    return LocalDateTimeInterval::parse($timeRange);
+                })
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function containerOf(): iterable
+    {
+        // Same same
+        yield [
+            [
+                '2020-01-01T00:00/2020-01-02T00:00',
+            ],
+            '2020-01-01T00:00/2020-01-02T00:00',
+        ];
+
+        // Consecutive time ranges
+        yield [
+            [
+                '2020-01-01T00:00/2020-01-02T00:00',
+                '2020-01-02T00:00/2020-01-03T00:00',
+            ],
+            '2020-01-01T00:00/2020-01-03T00:00',
+        ];
+
+        // With blanks
+        yield [
+            [
+                '2020-01-01T12:00/2020-01-01T18:00',
+                '2020-01-03T08:00/2020-01-04T00:00',
+                '2020-01-04T00:00/2020-01-04T00:01',
+            ],
+            '2020-01-01T12:00/2020-01-04T00:01',
+        ];
+    }
+
+    /**
+     * @dataProvider toFullDays
+     */
+    public function testToFullDays(string $input, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalDateTimeInterval::parse($input)->toFullDays());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function toFullDays(): iterable
+    {
+        // Same day
+        yield ['2020-01-01T00:00/2020-01-02T00:00', '2020-01-01T00:00/2020-01-02T00:00'];
+        yield ['2020-01-01T01:00/2020-01-02T00:00', '2020-01-01T00:00/2020-01-02T00:00'];
+        yield ['2020-01-01T00:00/2020-01-01T12:00', '2020-01-01T00:00/2020-01-02T00:00'];
+        yield ['2020-01-01T08:00/2020-01-01T12:00', '2020-01-01T00:00/2020-01-02T00:00'];
+
+        // Over multiple days
+        yield ['2020-01-01T00:00/2020-01-03T00:00', '2020-01-01T00:00/2020-01-03T00:00'];
+        yield ['2020-01-01T01:00/2020-01-03T00:00', '2020-01-01T00:00/2020-01-03T00:00'];
+        yield ['2020-01-01T00:00/2020-01-02T12:00', '2020-01-01T00:00/2020-01-03T00:00'];
+        yield ['2020-01-01T08:00/2020-01-02T12:00', '2020-01-01T00:00/2020-01-03T00:00'];
+    }
+
+    /**
+     * @dataProvider isFullDays
+     */
+    public function testIsFullDays(string $input, bool $expected): void
+    {
+        self::assertSame($expected, LocalDateTimeInterval::parse($input)->isFullDays());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isFullDays(): iterable
+    {
+        yield ['2020-01-01T00:00/2020-01-02T00:00', true];
+        yield ['2020-01-01T00:00/2020-01-04T00:00', true];
+
+        yield ['2020-01-01T00:00/2020-01-04T01:00', false];
+        yield ['2020-01-01T01:00/2020-01-04T00:00', false];
+        yield ['2020-01-01T01:00/2020-01-04T01:00', false];
+    }
+
+    /**
+     * @dataProvider days
+     *
+     * @param string[] $expected
+     */
+    public function testDays(string $input, array $expected): void
+    {
+        self::assertSame(
+            $expected,
+            map(
+                iterator_to_array(LocalDateTimeInterval::parse($input)->days()),
+                static function (LocalDateTimeInterval $timeRange): string {
+                    return (string) $timeRange;
+                }
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function days(): iterable
+    {
+        yield [
+            '2020-01-01T00:00/2020-01-02T00:00',
+            [
+                '2020-01-01T00:00/2020-01-02T00:00',
+            ],
+        ];
+        yield [
+            '2020-01-01T12:00/2020-01-02T12:00',
+            [
+                '2020-01-01T00:00/2020-01-02T00:00',
+                '2020-01-02T00:00/2020-01-03T00:00',
+            ],
+        ];
+        yield [
+            '2020-01-01T00:00/2020-01-03T01:00',
+            [
+                '2020-01-01T00:00/2020-01-02T00:00',
+                '2020-01-02T00:00/2020-01-03T00:00',
+                '2020-01-03T00:00/2020-01-04T00:00',
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider getInclusiveEnd
+     */
+    public function testGetInclusiveEnd(string $input, string $expected): void
+    {
+        static::assertSame(
+            $expected,
+            (string) LocalDateTimeInterval::parse($input)->getInclusiveEnd()
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function getInclusiveEnd(): iterable
+    {
+        yield ['-/-', ''];
+        yield ['2020-01-01T00:00/2020-01-02T00:00', '2020-01-01T23:59:59.999999999'];
+        yield ['2020-01-01T00:00/2020-01-01T12:34:56', '2020-01-01T12:34:55.999999999'];
     }
 }
