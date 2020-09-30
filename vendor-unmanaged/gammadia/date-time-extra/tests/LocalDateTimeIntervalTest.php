@@ -906,4 +906,25 @@ class LocalDateTimeIntervalTest extends TestCase
             ],
         ];
     }
+
+    /**
+     * @dataProvider getInclusiveEnd
+     */
+    public function testGetInclusiveEnd(string $input, string $expected): void
+    {
+        static::assertSame(
+            $expected,
+            (string) LocalDateTimeInterval::parse($input)->getInclusiveEnd()
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function getInclusiveEnd(): iterable
+    {
+        yield ['-/-', ''];
+        yield ['2020-01-01T00:00/2020-01-02T00:00', '2020-01-01T23:59:59.999999999'];
+        yield ['2020-01-01T00:00/2020-01-01T12:34:56', '2020-01-01T12:34:55.999999999'];
+    }
 }
