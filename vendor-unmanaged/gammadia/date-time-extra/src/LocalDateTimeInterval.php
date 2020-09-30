@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
+use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
+use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
 use Symfony\Component\String\ByteString;
 use Traversable;
+use Webmozart\Assert\Assert;
+use function Gammadia\Collections\Functional\contains;
+use function Gammadia\Collections\Functional\map;
 
 class LocalDateTimeInterval
 {
@@ -32,6 +37,11 @@ class LocalDateTimeInterval
 
         $this->start = $start;
         $this->end = $end;
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 
     /**
@@ -72,6 +82,77 @@ class LocalDateTimeInterval
     }
 
     /**
+     * Creates an infinite interval.
+     */
+    public static function forever(): self
+    {
+        return new self(null, null);
+    }
+
+    /**
+     * @param LocalDate|LocalDateTime $day
+     */
+    public static function day($day): self
+    {
+        Assert::isInstanceOfAny($day, [LocalDate::class, LocalDateTime::class]);
+
+        if ($day instanceof LocalDateTime) {
+            $startOfDay = $day->withTime(LocalTime::min());
+        } else {
+            $startOfDay = $day->atTime(LocalTime::min());
+        }
+
+        return new self($startOfDay, $startOfDay->plusDays(1));
+    }
+
+    /**
+     * Creates an interval that contains (encompasses) every provided intervals
+     *
+     * @param self ...$localDateTimeIntervals
+     *
+     * @return self|null new timestamp interval or null if the input is empty
+     */
+    public static function containerOf(self ...$localDateTimeIntervals): ?self
+    {
+        if (empty($localDateTimeIntervals)) {
+            return null;
+        }
+
+        $starts = map($localDateTimeIntervals, static function (self $localDateTimeInterval): ?LocalDateTime {
+            return $localDateTimeInterval->getStart();
+        });
+        $ends = map($localDateTimeIntervals, static function (self $localDateTimeInterval): ?LocalDateTime {
+            return $localDateTimeInterval->getEnd();
+        });
+
+        return self::between(
+            contains($starts, null, true) ? null : LocalDateTime::minOf(...$starts),
+            contains($ends, null, true) ? null : LocalDateTime::maxOf(...$ends)
+        );
+    }
+
+    /**
+     * Converts this instance to a timestamp interval with
+     * dates from midnight to midnight.
+     */
+    public function toFullDays(): self
+    {
+        return self::between(
+            $this->hasInfiniteStart() ? null : $this->getFiniteStart()->withTime(LocalTime::min()),
+            $this->hasInfiniteEnd() ? null : (
+                $this->getFiniteEnd()->getTime()->isEqualTo(LocalTime::min())
+                    ? $this->getFiniteEnd()
+                    : $this->getFiniteEnd()->plusDays(1)->withTime(LocalTime::min())
+            )
+        );
+    }
+
+    public function isFullDays(): bool
+    {
+        return $this->isEqualTo($this->toFullDays());
+    }
+
+    /**
      * Returns the nullable start time point.
      */
     public function getStart(): ?LocalDateTime
@@ -85,6 +166,11 @@ class LocalDateTimeInterval
     public function getEnd(): ?LocalDateTime
     {
         return $this->end;
+    }
+
+    public function getInclusiveEnd(): ?LocalDateTime
+    {
+        return $this->hasInfiniteEnd() ? null : $this->getFiniteEnd()->minusNanos(1);
     }
 
     /**
@@ -293,6 +379,14 @@ class LocalDateTimeInterval
                 ? $start->plusPeriod($periodOrDuration)
                 : $start->plusDuration($periodOrDuration);
         }
+    }
+
+    /**
+     * @return Traversable<self>
+     */
+    public function days(): Traversable
+    {
+        return $this->toFullDays()->slice(Period::ofDays(1));
     }
 
     /**
