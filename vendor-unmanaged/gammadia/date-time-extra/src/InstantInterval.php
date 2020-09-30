@@ -7,6 +7,9 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\Duration;
 use Brick\DateTime\Instant;
 
+/**
+ * @todo Complete this
+ */
 class InstantInterval
 {
     /**
@@ -43,7 +46,7 @@ class InstantInterval
     }
 
     /**
-     * <p>Yields the start time point if not null. </p>
+     * Yields the start time point if not null.
      */
     public function getFiniteStart(): Instant
     {
@@ -55,7 +58,7 @@ class InstantInterval
     }
 
     /**
-     * <p>Yields the start time point if not null. </p>
+     * Yields the start time point if not null.
      */
     public function getFiniteEnd(): Instant
     {
@@ -449,8 +452,8 @@ class InstantInterval
 //    }
 
     /**
-     * <p>Compares the boundaries (start and end) and also the time axis
-     * of this and the other interval. </p>
+     * Compares the boundaries (start and end) and also the time axis
+     * of this and the other interval.
      */
     public function equals(self $other): bool
     {
@@ -471,7 +474,7 @@ class InstantInterval
     }
 
     /**
-     * <p>Determines if this interval has finite boundaries. </p>
+     * Determines if this interval has finite boundaries.
      */
     public function isFinite(): bool
     {
@@ -479,7 +482,7 @@ class InstantInterval
     }
 
     /**
-     * <p>Determines if this interval has infinite start boundary. </p>
+     * Determines if this interval has infinite start boundary.
      */
     public function hasInfiniteStart(): bool
     {
@@ -487,7 +490,7 @@ class InstantInterval
     }
 
     /**
-     * <p>Determines if this interval has infinite end boundary. </p>
+     * Determines if this interval has infinite end boundary.
      */
     public function hasInfiniteEnd(): bool
     {

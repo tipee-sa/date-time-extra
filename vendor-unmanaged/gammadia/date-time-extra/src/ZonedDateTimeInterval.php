@@ -7,7 +7,9 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\Duration;
 use Brick\DateTime\ZonedDateTime;
 
-//todo voir InstantInterval.php
+/**
+ * @todo Complete this
+ */
 class ZonedDateTimeInterval
 {
     /**
@@ -52,10 +54,10 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Yields the length of this interval in given units and applies
-     * a timezone offset correction . </p>
+     * Yields the length of this interval in given units and applies
+     * a timezone offset correction.
      *
-     * @return  duration in given units including a zonal correction
+     * @return Duration in given units including a zonal correction
      */
     public function getDuration(): Duration
     {
@@ -70,7 +72,7 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Yields the start time point if not null. </p>
+     * Yields the start time point if not null.
      */
     public function getFiniteStart(): ZonedDateTime
     {
@@ -82,7 +84,7 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Yields the start time point if not null. </p>
+     * Yields the start time point if not null.
      */
     public function getFiniteEnd(): ZonedDateTime
     {
@@ -94,8 +96,8 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Compares the boundaries (start and end) and also the time axis
-     * of this and the other interval. </p>
+     * Compares the boundaries (start and end) and also the time axis
+     * of this and the other interval.
      */
     public function equals(self $other): bool
     {
@@ -111,7 +113,7 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval has finite boundaries. </p>
+     * Determines if this interval has finite boundaries.
      */
     public function isFinite(): bool
     {
@@ -119,7 +121,7 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval has infinite start boundary. </p>
+     * Determines if this interval has infinite start boundary.
      */
     public function hasInfiniteStart(): bool
     {
@@ -127,7 +129,7 @@ class ZonedDateTimeInterval
     }
 
     /**
-     * <p>Determines if this interval has infinite end boundary. </p>
+     * Determines if this interval has infinite end boundary.
      */
     public function hasInfiniteEnd(): bool
     {
