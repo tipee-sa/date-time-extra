@@ -28,9 +28,9 @@ final class DurationHelper
 
     public static function applyDailyPercentage(Duration $duration, LocalDateTimeInterval $timeRange): Duration
     {
-        return DurationHelper::applyPercentage(
+        return self::applyPercentage(
             $duration,
-            DurationHelper::percentage($timeRange->getDuration(), Duration::ofDays(1))
+            self::percentage($timeRange->getDuration(), Duration::ofDays(1))
         );
     }
 }
