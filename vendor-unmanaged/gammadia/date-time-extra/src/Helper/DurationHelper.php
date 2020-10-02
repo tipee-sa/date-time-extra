@@ -7,6 +7,7 @@ namespace Gammadia\DateTimeExtra\Helper;
 use App\Domain\Shared\Percentage;
 use Brick\DateTime\Duration;
 use Brick\DateTime\LocalTime;
+use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 
 final class DurationHelper
 {
@@ -23,5 +24,13 @@ final class DurationHelper
     public static function applyPercentage(Duration $duration, Percentage $rate): Duration
     {
         return Duration::ofNanos((int) ($duration->toNanos() * $rate->factor()));
+    }
+
+    public static function applyDailyPercentage(Duration $duration, LocalDateTimeInterval $timeRange): Duration
+    {
+        return DurationHelper::applyPercentage(
+            $duration,
+            DurationHelper::percentage($timeRange->getDuration(), Duration::ofDays(1))
+        );
     }
 }
