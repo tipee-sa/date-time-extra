@@ -102,7 +102,7 @@ class LocalDateInterval
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
      */
-    public function toFullDays(): LocalDateTimeInterval
+    public function toLocalDateTimeInterval(): LocalDateTimeInterval
     {
         /** @var LocalDateTime $start */
         $start = null;
@@ -129,7 +129,7 @@ class LocalDateInterval
      */
     public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
     {
-        return $this->toFullDays()->atTimeZone($timezoneId);
+        return $this->toLocalDateTimeInterval()->atTimeZone($timezoneId);
     }
 
     /**

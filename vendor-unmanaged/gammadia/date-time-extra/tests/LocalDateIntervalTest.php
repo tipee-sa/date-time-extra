@@ -46,15 +46,43 @@ class LocalDateIntervalTest extends TestCase
         self::assertTrue($this->interval('2009|2009')->equals(LocalDateInterval::atomic($date)));
     }
 
-    public function testToFullDays(): void
+    public function testToLocalDateTimeInterval(): void
     {
-        self::assertTrue(LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2012, 1, 2))->isEqualTo($this->interval('2012|2012')->toFullDays()));
-        self::assertTrue(LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2013, 1, 1))->isEqualTo($this->interval('2012|2013')->toFullDays()));
-        self::assertTrue(LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1))->isEqualTo($this->interval('2012|----')->toFullDays()));
-        self::assertTrue(LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1))->isEqualTo($this->interval('----|2012')->toFullDays()));
-        self::assertFalse(LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2013, 1, 1))->isEqualTo($this->interval('2011|2012')->toFullDays()));
-        self::assertFalse(LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1))->isEqualTo($this->interval('----|2012')->toFullDays()));
-        self::assertFalse(LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1))->isEqualTo($this->interval('2012|----')->toFullDays()));
+        self::assertTrue(
+            LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2012, 1, 2))->isEqualTo(
+                $this->interval('2012|2012')->toLocalDateTimeInterval()
+            )
+        );
+        self::assertTrue(
+            LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2013, 1, 1))->isEqualTo(
+                $this->interval('2012|2013')->toLocalDateTimeInterval()
+            )
+        );
+        self::assertTrue(
+            LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1))->isEqualTo(
+                $this->interval('2012|----')->toLocalDateTimeInterval()
+            )
+        );
+        self::assertTrue(
+            LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1))->isEqualTo(
+                $this->interval('----|2012')->toLocalDateTimeInterval()
+            )
+        );
+        self::assertFalse(
+            LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2013, 1, 1))->isEqualTo(
+                $this->interval('2011|2012')->toLocalDateTimeInterval()
+            )
+        );
+        self::assertFalse(
+            LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1))->isEqualTo(
+                $this->interval('----|2012')->toLocalDateTimeInterval()
+            )
+        );
+        self::assertFalse(
+            LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1))->isEqualTo(
+                $this->interval('2012|----')->toLocalDateTimeInterval()
+            )
+        );
     }
 
     public function testAtTimezoneSaoPaulo(): void
