@@ -71,7 +71,7 @@ final class DurationHelperTest extends TestCase
      */
     public function applyDailyPercentage(): iterable
     {
-        yield 'All day equals 100%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-03T00:00' , Duration::ofHours(8)];
-        yield 'Half-day equals 50%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-02T12:00' , Duration::ofHours(4)];
+        yield 'All day equals 100%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-03T00:00', Duration::ofHours(8)];
+        yield 'Half-day equals 50%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-02T12:00', Duration::ofHours(4)];
     }
 }

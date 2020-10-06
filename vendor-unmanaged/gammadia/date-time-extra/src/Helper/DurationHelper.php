@@ -18,8 +18,10 @@ final class DurationHelper
 
     public static function hoursToDuration(float $hours): Duration
     {
-        return Duration::ofMillis((int)round($hours * LocalTime::SECONDS_PER_HOUR * LocalTime::MILLIS_PER_SECOND,
-            PHP_ROUND_HALF_EVEN));
+        return Duration::ofMillis((int) round(
+            $hours * LocalTime::SECONDS_PER_HOUR * LocalTime::MILLIS_PER_SECOND,
+            PHP_ROUND_HALF_EVEN
+        ));
     }
 
     public static function applyPercentage(Duration $duration, Percentage $rate): Duration
