@@ -13,6 +13,7 @@ use Gammadia\DateTimeExtra\LocalDateInterval;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
+use function Gammadia\Collections\Functional\map;
 
 class LocalDateIntervalTest extends TestCase
 {
@@ -579,6 +580,56 @@ class LocalDateIntervalTest extends TestCase
 
         $intersection5 = $this->interval('2009|2012')->findIntersection($this->interval('2010|----'));
         self::assertTrue($intersection5 && $this->interval('2010|2012')->equals($intersection5));
+    }
+
+    /**
+     * @dataProvider containerOf
+     *
+     * @param string[] $input
+     */
+    public function testContainerOf(array $input, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateInterval::containerOf(
+                ...map($input, static function (string $timeRange): LocalDateInterval {
+                    return LocalDateInterval::parse($timeRange);
+                })
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function containerOf(): iterable
+    {
+        // Same same
+        yield [
+            [
+                '2020-01-01/2020-01-02',
+            ],
+            '2020-01-01/2020-01-02',
+        ];
+
+        // Consecutive time ranges
+        yield [
+            [
+                '2020-01-01/2020-01-02',
+                '2020-01-02/2020-01-03',
+            ],
+            '2020-01-01/2020-01-03',
+        ];
+
+        // With blanks
+        yield [
+            [
+                '2020-01-01/2020-01-01',
+                '2020-01-03/2020-01-04',
+                '2020-01-04/2020-01-04',
+            ],
+            '2020-01-01/2020-01-04',
+        ];
     }
 
     private function interval(string $i, string $strDuration = ''): LocalDateInterval
