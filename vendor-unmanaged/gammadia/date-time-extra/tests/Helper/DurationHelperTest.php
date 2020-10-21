@@ -39,7 +39,7 @@ final class DurationHelperTest extends TestCase
     {
         self::assertSame((string) $expected, (string) DurationHelper::applyPercentage($input, $rate));
 
-        self::markTestIncomplete('Need more tests');
+        self::markTestIncomplete('@todo Need more tests');
     }
 
     /**
@@ -63,7 +63,7 @@ final class DurationHelperTest extends TestCase
             (string) DurationHelper::applyDailyPercentage($input, LocalDateTimeInterval::parse($timeRange))
         );
 
-        self::markTestIncomplete('Need more tests');
+        self::markTestIncomplete('@todo Need more tests');
     }
 
     /**
