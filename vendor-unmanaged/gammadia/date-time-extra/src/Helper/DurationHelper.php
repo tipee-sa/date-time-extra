@@ -31,9 +31,14 @@ final class DurationHelper
 
     public static function applyDailyPercentage(Duration $duration, LocalDateTimeInterval $timeRange): Duration
     {
+        $timeRangeDuration = $timeRange->getDuration();
+        $oneDayDuration = Duration::ofDays(1);
+
         return self::applyPercentage(
             $duration,
-            self::percentage($timeRange->getDuration(), Duration::ofDays(1))
+            $timeRangeDuration->isGreaterThan($oneDayDuration)
+                ? self::percentage($oneDayDuration, $timeRangeDuration)
+                : self::percentage($timeRangeDuration, $oneDayDuration)
         );
     }
 }
