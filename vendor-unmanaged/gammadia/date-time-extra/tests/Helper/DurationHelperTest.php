@@ -7,6 +7,7 @@ namespace Gammadia\DateTimeExtra\Test\Unit\Helper;
 use App\Domain\Shared\Percentage;
 use Brick\DateTime\Duration;
 use Gammadia\DateTimeExtra\Helper\DurationHelper;
+use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use PHPUnit\Framework\TestCase;
 
 final class DurationHelperTest extends TestCase
@@ -29,7 +30,6 @@ final class DurationHelperTest extends TestCase
         yield [8.25, Duration::ofMinutes(495)];
         yield [0.01, Duration::ofSeconds(36)];
         yield [0.000005, Duration::ofMillis(18)];
-        yield [0.00000000001, Duration::ofNanos(36)];
     }
 
     /**
@@ -47,11 +47,28 @@ final class DurationHelperTest extends TestCase
     {
         yield [Duration::ofDays(365), Percentage::total(), Duration::ofDays(365)];
         yield [Duration::ofHours(8), Percentage::of(50.0), Duration::ofHours(4)];
-        yield [Duration::ofHours(8), Percentage::ofRatio(1, 2), Duration::ofHours(4)];
         yield [Duration::ofMinutes(10), Percentage::of(12.34), Duration::ofMillis(74040)];
-        yield [Duration::ofSeconds(1), Percentage::of(0.08), Duration::ofNanos(800000)];
-        yield [Duration::ofMillis(123), Percentage::of(0.1), Duration::ofNanos(123000)];
-        yield [Duration::ofNanos(90), Percentage::of(50.0), Duration::ofNanos(45)];
-        yield [Duration::ofNanos(90), Percentage::zero(), Duration::ofNanos(0)];
+    }
+
+    /**
+     * @dataProvider applyDailyPercentage
+     */
+    public function testApplyDailyPercentage(Duration $input, string $timeRange, Duration $expected): void
+    {
+        self::assertSame(
+            (string) $expected,
+            (string) DurationHelper::applyDailyPercentage($input, LocalDateTimeInterval::parse($timeRange))
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function applyDailyPercentage(): iterable
+    {
+        yield 'All day equals 100%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-03T00:00', Duration::ofHours(8)];
+        yield 'Half-day equals 50%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-02T12:00', Duration::ofHours(4)];
+        yield '4H equals 40M for the day' => [Duration::ofHours(4), '2020-01-02T08:00/2020-01-02T12:00', Duration::ofMinutes(40)];
+        yield 'For multiple days' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-04T00:00', Duration::ofHours(4)];
     }
 }
