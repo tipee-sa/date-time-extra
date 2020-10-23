@@ -29,16 +29,10 @@ final class DurationHelper
         return Duration::ofMillis((int) round($duration->toMillis() * $rate->factor(), PHP_ROUND_HALF_EVEN));
     }
 
-    public static function applyDailyPercentage(Duration $duration, LocalDateTimeInterval $timeRange): Duration
-    {
-        $timeRangeDuration = $timeRange->getDuration();
-        $oneDayDuration = Duration::ofDays(1);
-
-        return self::applyPercentage(
-            $duration,
-            $timeRangeDuration->isGreaterThan($oneDayDuration)
-                ? self::percentage($oneDayDuration, $timeRangeDuration)
-                : self::percentage($timeRangeDuration, $oneDayDuration)
-        );
+    public static function dailyDurationToEffectiveDuration(
+        Duration $dailyDuration,
+        LocalDateTimeInterval $timeRange
+    ): Duration {
+        return self::applyPercentage($dailyDuration, self::percentage($timeRange->getDuration(), Duration::ofDays(1)));
     }
 }
