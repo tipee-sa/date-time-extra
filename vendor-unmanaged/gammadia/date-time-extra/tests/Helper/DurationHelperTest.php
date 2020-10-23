@@ -69,6 +69,6 @@ final class DurationHelperTest extends TestCase
         yield 'All day equals 100%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-03T00:00', Duration::ofHours(8)];
         yield 'Half-day equals 50%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-02T12:00', Duration::ofHours(4)];
         yield 'Partial time range' => [Duration::ofHours(24), '2020-01-02T08:00/2020-01-02T12:00', Duration::ofHours(4)];
-        yield 'For multiple days' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-04T00:00', Duration::ofHours(4)];
+        yield 'For multiple days' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-04T00:00', Duration::ofHours(16)];
     }
 }
