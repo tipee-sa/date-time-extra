@@ -29,10 +29,10 @@ final class DurationHelper
         return Duration::ofMillis((int) round($duration->toMillis() * $rate->factor(), PHP_ROUND_HALF_EVEN));
     }
 
-    public static function dailyDurationToEffectiveDuration(
-        Duration $dailyDuration,
+    public static function dailyHoursToEffectiveDuration(
+        Duration $dailyHours,
         LocalDateTimeInterval $timeRange
     ): Duration {
-        return self::applyPercentage($dailyDuration, self::percentage($timeRange->getDuration(), Duration::ofDays(1)));
+        return self::applyPercentage($dailyHours, self::percentage($timeRange->getDuration(), Duration::ofDays(1)));
     }
 }

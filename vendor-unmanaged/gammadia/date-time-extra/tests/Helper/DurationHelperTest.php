@@ -51,20 +51,20 @@ final class DurationHelperTest extends TestCase
     }
 
     /**
-     * @dataProvider dailyDurationToEffectiveDuration
+     * @dataProvider dailyHoursToEffectiveDuration
      */
-    public function testDailyDurationToEffectiveDuration(Duration $input, string $timeRange, Duration $expected): void
+    public function testDailyHoursToEffectiveDuration(Duration $input, string $timeRange, Duration $expected): void
     {
         self::assertSame(
             (string) $expected,
-            (string) DurationHelper::dailyDurationToEffectiveDuration($input, LocalDateTimeInterval::parse($timeRange))
+            (string) DurationHelper::dailyHoursToEffectiveDuration($input, LocalDateTimeInterval::parse($timeRange))
         );
     }
 
     /**
      * @return iterable<mixed>
      */
-    public function dailyDurationToEffectiveDuration(): iterable
+    public function dailyHoursToEffectiveDuration(): iterable
     {
         yield 'All day equals 100%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-03T00:00', Duration::ofHours(8)];
         yield 'Half-day equals 50%' => [Duration::ofHours(8), '2020-01-02T00:00/2020-01-02T12:00', Duration::ofHours(4)];
