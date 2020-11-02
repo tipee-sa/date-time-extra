@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\LocalDate;
-use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
@@ -102,25 +101,12 @@ class LocalDateInterval
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
      */
-    public function toFullDays(): LocalDateTimeInterval
+    public function toLocalDateTimeInterval(): LocalDateTimeInterval
     {
-        /** @var LocalDateTime $start */
-        $start = null;
-
-        /** @var LocalDateTime $end */
-        $end = null;
-
-        if (!$this->hasInfiniteEnd() && !$this->hasInfiniteStart() && $this->getFiniteEnd()->isEqualTo($this->getFiniteStart())) {
-            $end = $this->getFiniteEnd()->plusDays(1)->atTime(LocalTime::of(0, 0, 0));
-        } elseif (!$this->hasInfiniteEnd()) {
-            $end = $this->getFiniteEnd()->atTime(LocalTime::of(0, 0, 0));
-        }
-
-        if (!$this->hasInfiniteStart()) {
-            $start = $this->getFiniteStart()->atTime(LocalTime::of(0, 0, 0));
-        }
-
-        return LocalDateTimeInterval::between($start, $end);
+        return LocalDateTimeInterval::between(
+            $this->hasInfiniteStart() ? null : $this->getFiniteStart()->atTime(LocalTime::min()),
+            $this->hasInfiniteEnd() ? null : $this->getFiniteEnd()->atTime(LocalTime::min())->plusDays(1)
+        );
     }
 
     /**
@@ -129,7 +115,7 @@ class LocalDateInterval
      */
     public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
     {
-        return $this->toFullDays()->atTimeZone($timezoneId);
+        return $this->toLocalDateTimeInterval()->atTimeZone($timezoneId);
     }
 
     /**
