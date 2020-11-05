@@ -32,7 +32,7 @@ class DurationType extends Type
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
         return null !== $value
-            ? Duration::ofSeconds($value)
+            ? Duration::ofSeconds((int) $value)
             : null;
     }
 
