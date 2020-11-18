@@ -10,7 +10,6 @@ use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
 use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateInterval;
-use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
@@ -46,55 +45,39 @@ class LocalDateIntervalTest extends TestCase
         self::assertTrue($this->interval('2009|2009')->equals(LocalDateInterval::atomic($date)));
     }
 
-    public function testToLocalDateTimeInterval(): void
+    /**
+     * @dataProvider toLocalDateTimeInterval
+     */
+    public function testToLocalDateTimeInterval(string $input, string $expected): void
     {
-        self::assertTrue(
-            LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2012, 1, 2))->isEqualTo(
-                $this->interval('2012|2012')->toLocalDateTimeInterval()
-            )
-        );
-        self::assertTrue(
-            LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2013, 1, 1))->isEqualTo(
-                $this->interval('2012|2013')->toLocalDateTimeInterval()
-            )
-        );
-        self::assertTrue(
-            LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1))->isEqualTo(
-                $this->interval('2012|----')->toLocalDateTimeInterval()
-            )
-        );
-        self::assertTrue(
-            LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1))->isEqualTo(
-                $this->interval('----|2012')->toLocalDateTimeInterval()
-            )
-        );
-        self::assertFalse(
-            LocalDateTimeInterval::between(LocalDateTime::of(2012, 1, 1), LocalDateTime::of(2013, 1, 1))->isEqualTo(
-                $this->interval('2011|2012')->toLocalDateTimeInterval()
-            )
-        );
-        self::assertFalse(
-            LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1))->isEqualTo(
-                $this->interval('----|2012')->toLocalDateTimeInterval()
-            )
-        );
-        self::assertFalse(
-            LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1))->isEqualTo(
-                $this->interval('2012|----')->toLocalDateTimeInterval()
-            )
-        );
+        self::assertSame($expected, (string) LocalDateInterval::parse($input)->toLocalDateTimeInterval());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function toLocalDateTimeInterval(): iterable
+    {
+        yield ['-/-', '-/-'];
+        yield ['-/2020-10-28', '-/2020-10-29T00:00'];
+        yield ['2020-10-28/-', '2020-10-28T00:00/-'];
+        yield ['2020-10-28/2020-10-28', '2020-10-28T00:00/2020-10-29T00:00'];
+        yield ['2020-10-28/2020-10-29', '2020-10-28T00:00/2020-10-30T00:00'];
+        yield ['2020-10-28/2020-11-02', '2020-10-28T00:00/2020-11-03T00:00'];
+        yield ['2020-10-28/2024-03-12', '2020-10-28T00:00/2024-03-13T00:00'];
     }
 
     public function testAtTimezoneSaoPaulo(): void
     {
         $saoPaulo = TimeZoneRegion::of('America/Sao_Paulo');
 
+        $dateRange = LocalDateInterval::parse('2016-10-16/2016-10-17');
         $ldt1 = LocalDateTime::of(2016, 10, 16);
-        $ldt2 = LocalDateTime::of(2016, 10, 17);
+        $ldt2 = LocalDateTime::of(2016, 10, 18);
 
         self::assertTrue(
-            LocalDateInterval::between($ldt1->getDate(), $ldt2->getDate())->atTimeZone($saoPaulo)->equals(
-                ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))
+            ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))->equals(
+                $dateRange->atTimeZone($saoPaulo)
             )
         );
     }
