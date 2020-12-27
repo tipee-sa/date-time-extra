@@ -21,7 +21,7 @@ class DurationType extends Type
      */
     public function convertToDatabaseValue($value, AbstractPlatform $platform): int
     {
-        return (int) round($value->toNanos() / LocalTime::NANOS_PER_SECOND, 0, PHP_ROUND_HALF_EVEN);
+        return (int) round($value->toMillis() / LocalTime::MILLIS_PER_SECOND, 0, PHP_ROUND_HALF_EVEN);
     }
 
     /**
