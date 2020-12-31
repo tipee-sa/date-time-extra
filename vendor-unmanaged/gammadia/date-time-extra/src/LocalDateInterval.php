@@ -199,6 +199,14 @@ class LocalDateInterval
     }
 
     /**
+     * @return \Traversable<LocalDate>
+     */
+    public function days(): \Traversable
+    {
+        return $this->iterate(Period::ofDays(1));
+    }
+
+    /**
      * Interpretes given ISO-conforming text as interval.
      */
     public static function parse(string $text): self
