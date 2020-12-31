@@ -10,6 +10,7 @@ use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
 use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateInterval;
+use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
@@ -603,8 +604,10 @@ class LocalDateIntervalTest extends TestCase
         self::assertSame(
             $expected,
             (string) LocalDateInterval::containerOf(
-                ...map($input, static function (string $timeRange): LocalDateInterval {
-                    return LocalDateInterval::parse($timeRange);
+                ...map($input, static function (string $timeRange) {
+                    return false !== strpos($timeRange, 'T')
+                        ? LocalDateTimeInterval::parse($timeRange)
+                        : LocalDateInterval::parse($timeRange);
                 })
             )
         );
@@ -615,13 +618,13 @@ class LocalDateIntervalTest extends TestCase
      */
     public function containerOf(): iterable
     {
+        // Empty sets
+        yield [['2020-01-01T12:00/2020-01-01T12:00'], '2020-01-01/2020-01-01'];
+        yield [['2020-01-01T00:00/2020-01-01T00:00'], '2020-01-01/2020-01-01'];
+
         // Same same
-        yield [
-            [
-                '2020-01-01/2020-01-02',
-            ],
-            '2020-01-01/2020-01-02',
-        ];
+        yield [['2020-01-01/2020-01-01'], '2020-01-01/2020-01-01'];
+        yield [['2020-01-01/2020-01-02'], '2020-01-01/2020-01-02'];
 
         // Consecutive time ranges
         yield [
