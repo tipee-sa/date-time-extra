@@ -220,6 +220,55 @@ final class LocalTimeIntervalTest extends TestCase
         self::assertSame($expected, LocalTimeInterval::parse($a)->isEqualTo(LocalTimeInterval::parse($b)));
     }
 
+    /**
+     * @dataProvider toFullDays
+     */
+    public function testToFullDays(string $input, string $expected): void
+    {
+        self::assertSame(
+            (string) LocalTimeInterval::parse($expected),
+            (string) LocalTimeInterval::parse($input)->toFullDays()
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function toFullDays(): iterable
+    {
+        yield ['00:00/PT0S', '00:00/PT0S'];
+        yield ['00:00/PT24H', '00:00/PT24H'];
+        yield ['00:00/PT4H', '00:00/PT24H'];
+        yield ['12:00/PT24H', '00:00/PT48H'];
+
+        // Infinite values are a bit weird to comprehend without the notion of a date, but that's okay
+        yield ['12:00/-', '00:00/-'];
+        yield ['-/12:00', '-/00:00'];
+    }
+
+    /**
+     * @dataProvider isFullDays
+     */
+    public function testIsFullDays(string $iso, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($iso)->isFullDays());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isFullDays(): iterable
+    {
+        yield ['00:00/PT0S', true];
+        yield ['00:00/PT24H', true];
+        yield ['00:00/PT48H', true];
+        yield ['00:00/P23D', true];
+
+        yield ['12:00/PT12H', false];
+        yield ['00:00/PT12H', false];
+        yield ['00:00/PT24H20M', false];
+    }
+
     public function testEmptyNamedConstructor(): void
     {
         self::assertSame(

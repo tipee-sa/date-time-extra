@@ -157,6 +157,23 @@ final class LocalTimeInterval
             && $this->finitude === $other->finitude;
     }
 
+    public function toFullDays(): self
+    {
+        $duration = null;
+        if (null !== $this->duration) {
+            $hasRemainder = !$this->timepoint->isEqualTo(LocalTime::min())
+                || 0 !== $this->duration->toMillis() % (LocalTime::SECONDS_PER_DAY * LocalTime::MILLIS_PER_SECOND);
+            $duration = Duration::ofDays($this->duration->toDays() + (int) $hasRemainder);
+        }
+
+        return new self(LocalTime::min(), $duration, $this->finitude);
+    }
+
+    public function isFullDays(): bool
+    {
+        return $this->isEqualTo($this->toFullDays());
+    }
+
     public function toString(): string
     {
         if ($this->hasInfiniteStart()) {
