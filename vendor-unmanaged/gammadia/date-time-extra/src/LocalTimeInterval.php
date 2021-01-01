@@ -129,9 +129,9 @@ final class LocalTimeInterval
         return new self($timepoint, null, self::INFINITE_END);
     }
 
-    public static function day(): self
+    public static function ofDays(int $days): self
     {
-        return new self(LocalTime::min(), Duration::ofDays(1));
+        return new self(LocalTime::min(), Duration::ofDays($days));
     }
 
     public static function containerOf(self ...$localTimeIntervals): self
@@ -146,6 +146,15 @@ final class LocalTimeInterval
         );
 
         return null !== $container ? self::from($container) : self::empty();
+    }
+
+    public function isEqualTo(self $other): bool
+    {
+        return $this->timepoint->isEqualTo($other->timepoint)
+            && ((null === $this->duration && null === $other->duration) || (
+                (null !== $this->duration && null !== $other->duration) && $this->duration->isEqualTo($other->duration)
+            ))
+            && $this->finitude === $other->finitude;
     }
 
     public function toString(): string

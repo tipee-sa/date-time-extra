@@ -101,6 +101,23 @@ final class LocalTimeIntervalTest extends TestCase
     /**
      * @return iterable<mixed>
      */
+    public function isEqualTo(): iterable
+    {
+        yield ['12:00/PT2H', '12:00/PT2H', true];
+        yield ['12:00/PT2H', '12:00/PT120M', true];
+        yield ['12:00/-', '12:00/-', true];
+        yield ['-/12:00', '-/12:00', true];
+
+        yield ['12:00/PT2H', '10:00/PT2H', false];
+        yield ['12:00/PT2H', '12:00/PT1H', false];
+        yield ['12:00/-', '-/12:00', false];
+        yield ['12:00/-', '12:00/PT1H', false];
+        yield ['-/12:00', '12:00/PT1H', false];
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
     public function invalidISO(): iterable
     {
         yield 'An infinite time interval makes no sense, there must be a timepoint.' => ['-/-'];
@@ -172,27 +189,6 @@ final class LocalTimeIntervalTest extends TestCase
         self::assertFalse(LocalTimeInterval::parse($iso)->isEmpty());
     }
 
-    public function testEmptyNamedConstructor(): void
-    {
-        self::assertSame(
-            (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
-            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::zero())
-        );
-    }
-
-    public function testForNamedConstructor(): void
-    {
-        self::assertSame(
-            (string) LocalTimeInterval::parse('12:34/PT2H'),
-            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2))
-        );
-    }
-
-    public function testDayNamedConstructor(): void
-    {
-        self::assertSame((string) LocalTimeInterval::parse('00:00/P1D'), (string) LocalTimeInterval::day());
-    }
-
     /**
      * @dataProvider validTimeRanges
      */
@@ -214,6 +210,36 @@ final class LocalTimeIntervalTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         LocalTimeInterval::from($timeRange);
+    }
+
+    /**
+     * @dataProvider isEqualTo
+     */
+    public function testIsEqualTo(string $a, string $b, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($a)->isEqualTo(LocalTimeInterval::parse($b)));
+    }
+
+    public function testEmptyNamedConstructor(): void
+    {
+        self::assertSame(
+            (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
+            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::zero())
+        );
+    }
+
+    public function testForNamedConstructor(): void
+    {
+        self::assertSame(
+            (string) LocalTimeInterval::parse('12:34/PT2H'),
+            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2))
+        );
+    }
+
+    public function testOfDaysNamedConstructor(): void
+    {
+        self::assertSame((string) LocalTimeInterval::parse('00:00/P1D'), (string) LocalTimeInterval::ofDays(1));
+        self::assertSame((string) LocalTimeInterval::parse('00:00/P30D'), (string) LocalTimeInterval::ofDays(30));
     }
 
     public function testContainerOf(): void
