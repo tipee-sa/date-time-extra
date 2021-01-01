@@ -9,6 +9,7 @@ use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Throwable;
 use Webmozart\Assert\Assert;
+use function Gammadia\Collections\Functional\map;
 
 final class LocalTimeInterval
 {
@@ -113,9 +114,9 @@ final class LocalTimeInterval
         return new self($timepoint, $duration, $finitude);
     }
 
-    public static function empty(LocalTime $timepoint): self
+    public static function empty(?LocalTime $timepoint = null): self
     {
-        return new self($timepoint, Duration::zero());
+        return new self($timepoint ?? LocalTime::min(), Duration::zero());
     }
 
     public static function until(LocalTime $timepoint): self
@@ -131,6 +132,20 @@ final class LocalTimeInterval
     public static function day(): self
     {
         return new self(LocalTime::min(), Duration::ofDays(1));
+    }
+
+    public static function containerOf(self ...$localTimeIntervals): self
+    {
+        $container = LocalDateTimeInterval::containerOf(
+            ...map(
+                $localTimeIntervals,
+                static function (self $localTimeInterval): LocalDateTimeInterval {
+                    return $localTimeInterval->atDate(self::arbitraryDate());
+                }
+            )
+        );
+
+        return null !== $container ? self::from($container) : self::empty();
     }
 
     public function toString(): string
