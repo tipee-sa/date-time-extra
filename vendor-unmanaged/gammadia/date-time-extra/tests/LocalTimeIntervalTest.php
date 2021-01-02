@@ -105,23 +105,6 @@ final class LocalTimeIntervalTest extends TestCase
     /**
      * @return iterable<mixed>
      */
-    public function isEqualTo(): iterable
-    {
-        yield ['12:00/PT2H', '12:00/PT2H', true];
-        yield ['12:00/PT2H', '12:00/PT120M', true];
-        yield ['12:00/-', '12:00/-', true];
-        yield ['-/12:00', '-/12:00', true];
-
-        yield ['12:00/PT2H', '10:00/PT2H', false];
-        yield ['12:00/PT2H', '12:00/PT1H', false];
-        yield ['12:00/-', '-/12:00', false];
-        yield ['12:00/-', '12:00/PT1H', false];
-        yield ['-/12:00', '12:00/PT1H', false];
-    }
-
-    /**
-     * @return iterable<mixed>
-     */
     public function invalidISO(): iterable
     {
         yield 'An infinite time interval makes no sense, there must be a timepoint.' => ['-/-'];
@@ -476,5 +459,124 @@ final class LocalTimeIntervalTest extends TestCase
     public function testIsEqualTo(string $a, string $b, bool $expected): void
     {
         self::assertSame($expected, LocalTimeInterval::parse($a)->isEqualTo(LocalTimeInterval::parse($b)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isEqualTo(): iterable
+    {
+        yield 'Identical' => ['12:00/PT2H', '12:00/PT2H', true];
+        yield 'Different ISOs but identical meaning' => ['12:00/PT2H', '12:00/PT120M', true];
+        yield 'Same infinite end' => ['12:00/-', '12:00/-', true];
+        yield 'Same infinite start' => ['-/12:00', '-/12:00', true];
+
+        yield 'Different timepoints' => ['12:00/PT2H', '10:00/PT2H', false];
+        yield 'Different durations' => ['12:00/PT2H', '12:00/PT1H', false];
+        yield 'Infinite end is not the same as infinite start' => ['12:00/-', '-/12:00', false];
+        yield 'Infinite end VS finite' => ['12:00/-', '12:00/PT1H', false];
+        yield 'Infinite start VS finite' => ['-/12:00', '12:00/PT1H', false];
+    }
+
+    /**
+     * @dataProvider isBefore
+     */
+    public function testIsBefore(string $iso, string $time, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($iso)->isBefore(LocalTime::parse($time)));
+    }
+
+    /**
+     * @dataProvider isBefore
+     */
+    public function testIsBeforeInterval(string $iso, string $time, bool $expected): void
+    {
+        // This has no impact on the tests results, but it allows to re-use the same data provider
+        $arbitraryDuration = Duration::ofHours(2);
+
+        self::assertSame(
+            $expected,
+            LocalTimeInterval::parse($iso)->isBeforeInterval(
+                LocalTimeInterval::for(LocalTime::parse($time), $arbitraryDuration)
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isBefore(): iterable
+    {
+        yield '14:00 <= 10:00 = no' => ['12:00/PT2H', '10:00', false];
+
+        yield '02:00 <= 00:00 = no' => ['00:00/PT2H', '00:00', false];
+        yield '02:00 <= 12:00 = yes' => ['00:00/PT2H', '12:00', true];
+
+        yield '12:01 <= 12:00 = no' => ['00:00/PT12H1S', '12:00', false];
+        yield '12:00 <= 12:00 = yes' => ['00:00/PT12H', '12:00', true];
+
+        yield '00:00 (next day) <= 23:59 (same day) = no' => ['12:00/PT12H', '23:59', false];
+        yield '23:59:59 <= 23:59:59 = yes' => ['23:59:58/PT1S', '23:59:59', true];
+        yield '23:59:58 <= 23:59:59 = yes' => ['12:00/PT11H59M58S', '23:59:59', true];
+    }
+
+    /**
+     * @dataProvider isAfter
+     */
+    public function testIsAfter(string $iso, string $time, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($iso)->isAfter(LocalTime::parse($time)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isAfter(): iterable
+    {
+        yield '12:00 > 10:00 = yes' => ['12:00/PT2H', '10:00', true];
+        yield '12:00 > 12:00 = no' => ['12:00/PT2H', '12:00', false];
+        yield '11:59:59 > 12:00 = no' => ['11:59:59/PT1S', '12:00', false];
+        yield '12:00:01 > 12:00 = yes' => ['12:00:01/PT2H', '12:00', true];
+        yield 'Duration has no impact' => ['00:00/PT12H', '12:00', false];
+    }
+
+    /**
+     * @dataProvider isAfterInterval
+     */
+    public function testIsAfterInterval(string $iso, string $other, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($iso)->isAfterInterval(LocalTimeInterval::parse($other)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isAfterInterval(): iterable
+    {
+        yield '12:00-14:00 > 12:00-12:00 = yes' => ['12:00/PT2H', '12:00/PT0S', true];
+        yield '12:00-14:00 > 12:00-12:01 = no' => ['12:00/PT2H', '12:00/PT1S', false];
+    }
+
+    /**
+     * @dataProvider containsDataProvider
+     */
+    public function testContains(string $iso, string $time, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($iso)->contains(LocalTime::parse($time)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function containsDataProvider(): iterable
+    {
+        yield '11:59:59 in 12:00-13:00 = no' => ['12:00/PT1H', '11:59:59', false];
+        yield '12:00:00 in 12:00-13:00 = yes' => ['12:00/PT1H', '12:00', true];
+        yield '12:30:00 in 12:00-13:00 = yes' => ['12:00/PT1H', '12:30', true];
+        yield '12:59:59 in 12:00-13:00 = yes' => ['12:00/PT1H', '12:59:59', true];
+        yield '12:00:01 in 12:00-13:00 = no' => ['12:00/PT1H', '13:00', false];
+
+        yield '23:59:59 is not in 00:00/PT24H-1S' => ['00:00/PT24H-1S', '23:59:59', false];
+        yield 'Any duration greater or equal to 24h contains any specific time' => ['12:00/PT24H', '11:00', true];
     }
 }

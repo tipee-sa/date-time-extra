@@ -311,6 +311,51 @@ final class LocalTimeInterval
             && $this->finitude === $other->finitude;
     }
 
+    public function isBefore(LocalTime $time): bool
+    {
+        return $this->isBeforeInterval(self::empty($time));
+    }
+
+    public function isBeforeInterval(self $other): bool
+    {
+        if ($other->hasInfiniteStart() || $this->hasInfiniteEnd()) {
+            return false;
+        }
+
+        $arbitraryDate = self::arbitraryDate();
+
+        $endA = $this->atDate($arbitraryDate)->getFiniteEnd();
+        $startB = $other->atDate($arbitraryDate)->getFiniteStart();
+
+        return $endA->isBeforeOrEqualTo($startB);
+    }
+
+    public function isAfter(LocalTime $time): bool
+    {
+        if ($this->hasInfiniteStart()) {
+            return false;
+        }
+
+        return $this->timepoint->isAfter($time);
+    }
+
+    public function isAfterInterval(self $other): bool
+    {
+        return $other->isBeforeInterval($this);
+    }
+
+    public function contains(LocalTime $time): bool
+    {
+        // If it is at least 24 hours long, then it contains all points in time
+        if (null !== $this->duration && !$this->duration->isLessThan(Duration::ofDays(1))) {
+            return true;
+        }
+
+        $arbitraryDate = self::arbitraryDate();
+
+        return $this->atDate($arbitraryDate)->contains($time->atDate($arbitraryDate));
+    }
+
     /*
      * Private methods
      */
