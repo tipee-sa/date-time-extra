@@ -20,6 +20,10 @@ final class LocalTimeIntervalTest extends TestCase
      */
     private const DATE = '2020-01-02';
 
+    /*
+     * Re-usable data providers
+     */
+
     /**
      * @return iterable<mixed>
      */
@@ -146,6 +150,10 @@ final class LocalTimeIntervalTest extends TestCase
         yield [LocalDateTimeInterval::forever()];
     }
 
+    /*
+     * Named constructors tests
+     */
+
     /**
      * @dataProvider emptyISO
      * @dataProvider validISO
@@ -165,28 +173,20 @@ final class LocalTimeIntervalTest extends TestCase
         LocalTimeInterval::parse($iso);
     }
 
-    /**
-     * @dataProvider validISO
-     */
-    public function testAtDate(string $iso, string $expected): void
+    public function testEmptyNamedConstructor(): void
     {
-        self::assertSame($expected, (string) LocalTimeInterval::parse($iso)->atDate(LocalDate::parse(self::DATE)));
+        self::assertSame(
+            (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
+            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::zero())
+        );
     }
 
-    /**
-     * @dataProvider emptyISO
-     */
-    public function testIsEmpty(string $iso): void
+    public function testForNamedConstructor(): void
     {
-        self::assertTrue(LocalTimeInterval::parse($iso)->isEmpty());
-    }
-
-    /**
-     * @dataProvider validISO
-     */
-    public function testIsNotEmpty(string $iso): void
-    {
-        self::assertFalse(LocalTimeInterval::parse($iso)->isEmpty());
+        self::assertSame(
+            (string) LocalTimeInterval::parse('12:34/PT2H'),
+            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2))
+        );
     }
 
     /**
@@ -213,76 +213,31 @@ final class LocalTimeIntervalTest extends TestCase
     }
 
     /**
-     * @dataProvider isEqualTo
+     * @dataProvider between
      */
-    public function testIsEqualTo(string $a, string $b, bool $expected): void
+    public function testBetween(string $expectedIso, ?string $startTimeIso, ?string $endTimeIso): void
     {
-        self::assertSame($expected, LocalTimeInterval::parse($a)->isEqualTo(LocalTimeInterval::parse($b)));
-    }
+        $startTime = null !== $startTimeIso ? LocalTime::parse($startTimeIso) : null;
+        $endTime = null !== $endTimeIso ? LocalTime::parse($endTimeIso) : null;
 
-    /**
-     * @dataProvider toFullDays
-     */
-    public function testToFullDays(string $input, string $expected): void
-    {
-        self::assertSame(
-            (string) LocalTimeInterval::parse($expected),
-            (string) LocalTimeInterval::parse($input)->toFullDays()
-        );
+        self::assertSame($expectedIso, (string) LocalTimeInterval::between($startTime, $endTime));
     }
 
     /**
      * @return iterable<mixed>
      */
-    public function toFullDays(): iterable
+    public function between(): iterable
     {
-        yield ['00:00/PT0S', '00:00/PT0S'];
-        yield ['00:00/PT24H', '00:00/PT24H'];
-        yield ['00:00/PT4H', '00:00/PT24H'];
-        yield ['12:00/PT24H', '00:00/PT48H'];
+        yield 'Two midnights equals an empty duration starting at midnight.' => ['00:00/PT0S', '00:00', '00:00'];
 
-        // Infinite values are a bit weird to comprehend without the notion of a date, but that's okay
-        yield ['12:00/-', '00:00/-'];
-        yield ['-/12:00', '-/00:00'];
-    }
+        yield ['00:00/PT12H', '00:00', '12:00'];
+        yield ['12:00/PT12H', '12:00', '00:00'];
+        yield ['00:00/PT1M', '00:00', '00:01'];
+        yield ['00:00/PT23H59M', '00:00', '23:59'];
+        yield ['18:00/PT14H', '18:00', '08:00'];
 
-    /**
-     * @dataProvider isFullDays
-     */
-    public function testIsFullDays(string $iso, bool $expected): void
-    {
-        self::assertSame($expected, LocalTimeInterval::parse($iso)->isFullDays());
-    }
-
-    /**
-     * @return iterable<mixed>
-     */
-    public function isFullDays(): iterable
-    {
-        yield ['00:00/PT0S', true];
-        yield ['00:00/PT24H', true];
-        yield ['00:00/PT48H', true];
-        yield ['00:00/P23D', true];
-
-        yield ['12:00/PT12H', false];
-        yield ['00:00/PT12H', false];
-        yield ['00:00/PT24H20M', false];
-    }
-
-    public function testEmptyNamedConstructor(): void
-    {
-        self::assertSame(
-            (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
-            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::zero())
-        );
-    }
-
-    public function testForNamedConstructor(): void
-    {
-        self::assertSame(
-            (string) LocalTimeInterval::parse('12:34/PT2H'),
-            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2))
-        );
+        yield ['18:00/-', '18:00', null];
+        yield ['-/18:00', null, '18:00'];
     }
 
     public function testOfDaysNamedConstructor(): void
@@ -316,6 +271,18 @@ final class LocalTimeIntervalTest extends TestCase
         self::assertSame('12:00/-', (string) LocalTimeInterval::containerOf(...$infiniteEndIntervals));
     }
 
+    /*
+     * Converters tests
+     */
+
+    /**
+     * @dataProvider validISO
+     */
+    public function testAtDate(string $iso, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalTimeInterval::parse($iso)->atDate(LocalDate::parse(self::DATE)));
+    }
+
     public function testToString(): void
     {
         $localTimeInterval = LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
@@ -327,31 +294,187 @@ final class LocalTimeIntervalTest extends TestCase
         self::assertSame((string) $localTimeInterval, $localTimeInterval->toString());
     }
 
-    /**
-     * @dataProvider between
+    /*
+     * Transformers tests
      */
-    public function testBetween(string $expectedIso, ?string $startTimeIso, ?string $endTimeIso): void
-    {
-        $startTime = null !== $startTimeIso ? LocalTime::parse($startTimeIso) : null;
-        $endTime = null !== $endTimeIso ? LocalTime::parse($endTimeIso) : null;
 
-        self::assertSame($expectedIso, (string) LocalTimeInterval::between($startTime, $endTime));
+    /**
+     * @dataProvider withTimepoint
+     */
+    public function testWithTimepoint(string $iso, string $timepointIso, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalTimeInterval::parse($iso)->withTimepoint(LocalTime::parse($timepointIso))
+        );
     }
 
     /**
      * @return iterable<mixed>
      */
-    public function between(): iterable
+    public function withTimepoint(): iterable
     {
-        yield 'Two midnights equals an empty duration starting at midnight.' => ['00:00/PT0S', '00:00', '00:00'];
+        yield 'No change' => ['00:00/PT12H', '00:00', '00:00/PT12H'];
+        yield 'Forward' => ['00:00/PT12H', '12:00', '12:00/PT12H'];
+        yield 'Backward' => ['14:00/PT2H', '01:00', '01:00/PT2H'];
+        yield 'With minutes' => ['14:00/PT1M', '23:59', '23:59/PT1M'];
+        yield 'With seconds' => ['14:00/PT1M', '23:59:59', '23:59:59/PT1M'];
+        yield 'Infinite start' => ['-/14:00', '12:00', '-/12:00'];
+        yield 'Infinite end' => ['14:00/-', '12:00', '12:00/-'];
+    }
 
-        yield ['00:00/PT12H', '00:00', '12:00'];
-        yield ['12:00/PT12H', '12:00', '00:00'];
-        yield ['00:00/PT1M', '00:00', '00:01'];
-        yield ['00:00/PT23H59M', '00:00', '23:59'];
-        yield ['18:00/PT14H', '18:00', '08:00'];
+    /**
+     * @dataProvider withDuration
+     */
+    public function testWithDuration(string $iso, ?string $durationIso, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalTimeInterval::parse($iso)->withDuration(
+                null !== $durationIso ? Duration::parse($durationIso) : null
+            )
+        );
+    }
 
-        yield ['18:00/-', '18:00', null];
-        yield ['-/18:00', null, '18:00'];
+    /**
+     * @return iterable<mixed>
+     */
+    public function withDuration(): iterable
+    {
+        yield 'No change' => ['00:00/PT12H', 'PT2H', '00:00/PT2H'];
+        yield 'No change infinite start' => ['-/00:00', null, '-/00:00'];
+        yield 'No change infinite end' => ['00:00/-', null, '00:00/-'];
+
+        yield 'Increase' => ['00:00/PT2H', 'PT12H', '00:00/PT12H'];
+        yield 'Decrease' => ['12:00/PT2H', 'PT1H', '12:00/PT1H'];
+        yield 'With minutes' => ['12:00/PT1H', 'PT30M', '12:00/PT30M'];
+        yield 'With seconds' => ['12:00/PT1H', 'PT15M30S', '12:00/PT15M30S'];
+
+        yield 'Infinite start to finite' => ['-/12:00', 'PT1H', '12:00/PT1H'];
+        yield 'Infinite end to finite' => ['12:00/-', 'PT1H', '12:00/PT1H'];
+
+        yield 'Finite to infinite end (finite to infinite start is not possible through this method' => [
+            '12:00/PT1H',
+            null,
+            '12:00/-',
+        ];
+    }
+
+    /**
+     * @dataProvider move
+     */
+    public function testMove(string $iso, Duration $duration, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalTimeInterval::parse($iso)->move($duration));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function move(): iterable
+    {
+        yield 'No change' => ['00:00/PT1H', Duration::zero(), '00:00/PT1H'];
+        yield 'Forward' => ['00:00/PT0S', Duration::ofMinutes(30), '00:30/PT0S'];
+        yield 'Backward' => ['00:00/PT0S', Duration::ofMinutes(-30), '23:30/PT0S'];
+    }
+
+    /**
+     * @dataProvider collapse
+     */
+    public function testCollapse(string $iso, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalTimeInterval::parse($iso)->collapse());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function collapse(): iterable
+    {
+        yield 'Finite' => ['00:00/PT2H', '00:00/PT0S'];
+        yield 'With seconds' => ['12:34:56/PT4H30M12S', '12:34:56/PT0S'];
+        yield 'Infinite start' => ['-/00:00', '00:00/PT0S'];
+        yield 'Infinite end' => ['00:00/-', '00:00/PT0S'];
+    }
+
+    /**
+     * @dataProvider toFullDays
+     */
+    public function testToFullDays(string $input, string $expected): void
+    {
+        self::assertSame(
+            (string) LocalTimeInterval::parse($expected),
+            (string) LocalTimeInterval::parse($input)->toFullDays()
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function toFullDays(): iterable
+    {
+        yield ['00:00/PT0S', '00:00/PT0S'];
+        yield ['00:00/PT24H', '00:00/PT24H'];
+        yield ['00:00/PT4H', '00:00/PT24H'];
+        yield ['12:00/PT24H', '00:00/PT48H'];
+
+        // Infinite values are a bit weird to comprehend without the notion of a date, but that's okay
+        yield ['12:00/-', '00:00/-'];
+        yield ['-/12:00', '-/00:00'];
+    }
+
+    /*
+     * Testers tests
+     */
+
+    /**
+     * @dataProvider isFullDays
+     */
+    public function testIsFullDays(string $iso, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($iso)->isFullDays());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function isFullDays(): iterable
+    {
+        yield ['00:00/PT0S', true];
+        yield ['00:00/PT24H', true];
+        yield ['00:00/PT48H', true];
+        yield ['00:00/P23D', true];
+
+        yield ['12:00/PT12H', false];
+        yield ['00:00/PT12H', false];
+        yield ['00:00/PT24H20M', false];
+    }
+
+    /**
+     * @dataProvider emptyISO
+     */
+    public function testIsEmpty(string $iso): void
+    {
+        self::assertTrue(LocalTimeInterval::parse($iso)->isEmpty());
+    }
+
+    /**
+     * @dataProvider validISO
+     */
+    public function testIsNotEmpty(string $iso): void
+    {
+        self::assertFalse(LocalTimeInterval::parse($iso)->isEmpty());
+    }
+
+    /*
+     * Comparators tests
+     */
+
+    /**
+     * @dataProvider isEqualTo
+     */
+    public function testIsEqualTo(string $a, string $b, bool $expected): void
+    {
+        self::assertSame($expected, LocalTimeInterval::parse($a)->isEqualTo(LocalTimeInterval::parse($b)));
     }
 }
