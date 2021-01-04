@@ -74,15 +74,28 @@ class LocalDateInterval
     /**
      * Creates an interval that contains (encompasses) every provided intervals
      *
-     * @param self ...$localDateIntervals
+     * @param self|LocalDateTimeInterval ...$localDateIntervals
      *
      * @return self|null new timestamp interval or null if the input is empty
      */
-    public static function containerOf(self ...$localDateIntervals): ?self
+    public static function containerOf(...$localDateIntervals): ?self
     {
         if (empty($localDateIntervals)) {
             return null;
         }
+
+        $localDateIntervals = map($localDateIntervals, static function ($localDateOrDateTimeInterval): self {
+            if ($localDateOrDateTimeInterval instanceof LocalDateTimeInterval) {
+                $timeRange = $localDateOrDateTimeInterval->toFullDays();
+
+                return self::between(
+                    $timeRange->hasInfiniteStart() ? null : $timeRange->getFiniteStart()->getDate(),
+                    $timeRange->hasInfiniteEnd() ? null : $timeRange->getFiniteEnd()->getDate()->minusDays(1)
+                );
+            }
+
+            return $localDateOrDateTimeInterval;
+        });
 
         $starts = map($localDateIntervals, static function (self $localDateInterval): ?LocalDate {
             return $localDateInterval->getStart();
@@ -183,6 +196,14 @@ class LocalDateInterval
         ) {
             yield $start;
         }
+    }
+
+    /**
+     * @return \Traversable<LocalDate>
+     */
+    public function days(): \Traversable
+    {
+        return $this->iterate(Period::ofDays(1));
     }
 
     /**
