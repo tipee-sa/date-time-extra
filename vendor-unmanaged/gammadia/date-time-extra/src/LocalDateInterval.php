@@ -382,7 +382,7 @@ class LocalDateInterval
      * Compares the boundaries (start and end) and also the time axis
      * of this and the other interval.
      */
-    public function equals(self $other): bool
+    public function isEqualTo(self $other): bool
     {
         if ($this->hasInfiniteStart() !== $other->hasInfiniteStart() ||
             $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()) {
