@@ -137,23 +137,6 @@ class LocalDateTimeInterval
     }
 
     /**
-     * @throws \InvalidArgumentException
-     */
-    public function toLocalTimeInterval(): LocalTimeInterval
-    {
-        Assert::false($this->hasInfiniteStart() && $this->hasInfiniteEnd(), LocalTimeInterval::FOREVER_ERROR);
-
-        if ($this->hasInfiniteStart()) {
-            return LocalTimeInterval::until($this->getFiniteEnd()->getTime());
-        }
-        if ($this->hasInfiniteEnd()) {
-            return LocalTimeInterval::since($this->getFiniteStart()->getTime());
-        }
-
-        return LocalTimeInterval::between($this->getFiniteStart()->getTime(), $this->getDuration());
-    }
-
-    /**
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
      */

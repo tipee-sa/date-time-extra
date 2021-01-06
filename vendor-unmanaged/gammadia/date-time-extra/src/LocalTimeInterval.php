@@ -15,32 +15,7 @@ final class LocalTimeInterval
     /**
      * @var string
      */
-    public const FOREVER_ERROR = 'Creating a LocalTimeInterval with both an infinite start and end is not possible.';
-
-    /**
-     * @var string
-     */
     private const SEPARATOR = '/';
-
-    /**
-     * @var string
-     */
-    private const INFINITY = '-';
-
-    /**
-     * @var int
-     */
-    private const FINITE = 0;
-
-    /**
-     * @var int
-     */
-    private const INFINITE_START = 1;
-
-    /**
-     * @var int
-     */
-    private const INFINITE_END = 2;
 
     /**
      * @var LocalTime
@@ -48,27 +23,19 @@ final class LocalTimeInterval
     private $timepoint;
 
     /**
-     * @var Duration|null
+     * @var Duration
      */
     private $duration;
 
-    /**
-     * @var int
-     */
-    private $finitude;
-
-    private function __construct(LocalTime $timepoint, ?Duration $duration, int $finitude)
+    private function __construct(LocalTime $timepoint, Duration $duration)
     {
-        if (null !== $duration) {
-            Assert::true(
-                $duration->isPositiveOrZero(),
-                sprintf('Negative durations are not supported by %s', self::class)
-            );
-        }
+        Assert::true(
+            $duration->isPositiveOrZero(),
+            sprintf('Negative durations are not supported by %s', self::class)
+        );
 
         $this->timepoint = $timepoint;
         $this->duration = $duration;
-        $this->finitude = $finitude;
     }
 
     public function __toString(): string
@@ -82,62 +49,29 @@ final class LocalTimeInterval
 
     public static function empty(?LocalTime $timepoint = null): self
     {
-        return new self($timepoint ?? LocalTime::min(), Duration::zero(), self::FINITE);
-    }
-
-    public static function until(LocalTime $timepoint): self
-    {
-        return new self($timepoint, null, self::INFINITE_START);
-    }
-
-    public static function since(LocalTime $timepoint): self
-    {
-        return new self($timepoint, null, self::INFINITE_END);
+        return new self($timepoint ?? LocalTime::min(), Duration::zero());
     }
 
     public static function ofDays(int $days): self
     {
-        return new self(LocalTime::min(), Duration::ofDays($days), self::FINITE);
+        return new self(LocalTime::min(), Duration::ofDays($days));
     }
 
     public static function between(LocalTime $timepoint, Duration $duration): self
     {
-        return new self($timepoint, $duration, self::FINITE);
+        return new self($timepoint, $duration);
     }
 
     /**
-     * @param string $textToParse A LocalTime + optional Duration (12:34/PT2H, PT2H/12:34, -/12:34 or 12:34/-)
+     * @param string $textToParse A LocalTime + optional Duration (12:34/PT2H)
      */
     public static function parse(string $textToParse): self
     {
         try {
             Assert::contains($textToParse, self::SEPARATOR);
             [$firstPart, $secondPart] = explode(self::SEPARATOR, $textToParse);
-            Assert::false(self::INFINITY === $firstPart && self::INFINITY === $secondPart, self::FOREVER_ERROR);
 
-            $isFinite = false;
-            $hasInfiniteStart = false;
-
-            if (self::INFINITY === $firstPart) {
-                $timepoint = LocalTime::parse($secondPart);
-                $duration = null;
-                $hasInfiniteStart = true;
-            } elseif (self::INFINITY === $secondPart) {
-                $timepoint = LocalTime::parse($firstPart);
-                $duration = null;
-            } else {
-                // Let's allow for reversed arguments, because we can and it doesn't matter
-                try {
-                    $timepoint = LocalTime::parse($firstPart);
-                    $duration = Duration::parse($secondPart);
-                } catch (\Throwable $throwable) {
-                    $timepoint = LocalTime::parse($secondPart);
-                    $duration = Duration::parse($firstPart);
-                }
-                $isFinite = true;
-            }
-
-            return new self($timepoint, $duration, self::finitude($isFinite, $hasInfiniteStart));
+            return new self(LocalTime::parse($firstPart), Duration::parse($secondPart));
         } catch (Throwable $throwable) {
             throw IntervalParseException::localTimeInterval($textToParse, $throwable);
         }
@@ -149,34 +83,14 @@ final class LocalTimeInterval
 
     public function atDate(LocalDate $date): LocalDateTimeInterval
     {
-        $localDateTime = $this->timepoint->atDate($date);
-        $start = $end = null;
+        $start = $this->timepoint->atDate($date);
 
-        if (!$this->hasInfiniteStart()) {
-            $start = null !== $this->duration && $this->duration->isNegative()
-                ? $localDateTime->plusDuration($this->duration)
-                : $localDateTime;
-        }
-        if (!$this->hasInfiniteEnd()) {
-            $end = null !== $this->duration && $this->duration->isPositive()
-                ? $localDateTime->plusDuration($this->duration)
-                : $localDateTime;
-        }
-
-        return LocalDateTimeInterval::between($start, $end);
+        return LocalDateTimeInterval::between($start, $start->plusDuration($this->duration));
     }
 
     public function toString(): string
     {
-        if ($this->hasInfiniteStart()) {
-            $arguments = [self::INFINITY, $this->timepoint];
-        } elseif ($this->hasInfiniteEnd()) {
-            $arguments = [$this->timepoint, self::INFINITY];
-        } else {
-            $arguments = [$this->timepoint, $this->duration];
-        }
-
-        return implode(self::SEPARATOR, $arguments);
+        return implode(self::SEPARATOR, [$this->timepoint, $this->duration]);
     }
 
     /*
@@ -189,14 +103,16 @@ final class LocalTimeInterval
             return $this;
         }
 
-        return new self($timepoint, $this->duration, $this->finitude);
+        return new self($timepoint, $this->duration);
     }
 
-    public function withDuration(?Duration $duration): self
+    public function withDuration(Duration $duration): self
     {
-        $finitude = self::finitude(null !== $duration, null === $duration && $this->hasInfiniteStart());
+        if ($duration->isEqualTo($this->duration)) {
+            return $this;
+        }
 
-        return new self($this->timepoint, $duration, $finitude);
+        return new self($this->timepoint, $duration);
     }
 
     public function move(Duration $duration): self
@@ -215,14 +131,11 @@ final class LocalTimeInterval
 
     public function toFullDays(): self
     {
-        $duration = null;
-        if (null !== $this->duration) {
-            $hasRemainder = !$this->timepoint->isEqualTo(LocalTime::min())
-                || 0 !== $this->duration->toMillis() % (LocalTime::SECONDS_PER_DAY * LocalTime::MILLIS_PER_SECOND);
-            $duration = Duration::ofDays($this->duration->toDays() + (int) $hasRemainder);
-        }
+        $hasRemainder = !$this->timepoint->isEqualTo(LocalTime::min())
+            || 0 !== $this->duration->toMillis() % (LocalTime::SECONDS_PER_DAY * LocalTime::MILLIS_PER_SECOND);
+        $duration = Duration::ofDays($this->duration->toDays() + (int) $hasRemainder);
 
-        return new self(LocalTime::min(), $duration, $this->finitude);
+        return new self(LocalTime::min(), $duration);
     }
 
     /*
@@ -236,22 +149,7 @@ final class LocalTimeInterval
 
     public function isEmpty(): bool
     {
-        return null !== $this->duration && $this->duration->isZero();
-    }
-
-    public function isFinite(): bool
-    {
-        return self::FINITE === $this->finitude;
-    }
-
-    public function hasInfiniteStart(): bool
-    {
-        return self::INFINITE_START === $this->finitude;
-    }
-
-    public function hasInfiniteEnd(): bool
-    {
-        return self::INFINITE_END === $this->finitude;
+        return $this->duration->isZero();
     }
 
     /*
@@ -260,23 +158,6 @@ final class LocalTimeInterval
 
     public function isEqualTo(self $other): bool
     {
-        return $this->timepoint->isEqualTo($other->timepoint)
-            && $this->isDurationEqualTo($other->duration)
-            && $this->finitude === $other->finitude;
-    }
-
-    /*
-     * Private methods
-     */
-
-    private static function finitude(bool $isFinite, bool $hasInfiniteStart): int
-    {
-        return $isFinite ? self::FINITE : ($hasInfiniteStart ? self::INFINITE_START : self::INFINITE_END);
-    }
-
-    private function isDurationEqualTo(?Duration $other): bool
-    {
-        return (null === $this->duration && null === $other)
-            || ((null !== $this->duration && null !== $other) && $this->duration->isEqualTo($other));
+        return $this->timepoint->isEqualTo($other->timepoint) && $this->duration->isEqualTo($other->duration);
     }
 }

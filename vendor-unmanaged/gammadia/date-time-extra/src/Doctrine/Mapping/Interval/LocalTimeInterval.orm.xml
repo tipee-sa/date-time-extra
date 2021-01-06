@@ -2,6 +2,5 @@
     <embeddable name="Gammadia\DateTimeExtra\LocalTimeInterval">
         <field name="timepoint" type="local_time" />
         <field name="duration" type="duration" nullable="true" />
-        <field name="finitude" type="integer" />
     </embeddable>
 </doctrine-mapping>
