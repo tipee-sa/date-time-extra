@@ -57,6 +57,11 @@ class LocalDateTimeInterval
         return new self($start, $end);
     }
 
+    public static function empty(LocalDateTime $at): self
+    {
+        return self::between($at, $at);
+    }
+
     /**
      * Creates an infinite half-open interval since given start.
      *
@@ -131,9 +136,12 @@ class LocalDateTimeInterval
         );
     }
 
+    /**
+     * @throws \InvalidArgumentException
+     */
     public function toLocalTimeInterval(): LocalTimeInterval
     {
-        Assert::false($this->hasInfiniteStart() && $this->hasInfiniteEnd(), 'A timepoint is mandatory.');
+        Assert::false($this->hasInfiniteStart() && $this->hasInfiniteEnd(), LocalTimeInterval::FOREVER_ERROR);
 
         if ($this->hasInfiniteStart()) {
             return LocalTimeInterval::until($this->getFiniteEnd()->getTime());

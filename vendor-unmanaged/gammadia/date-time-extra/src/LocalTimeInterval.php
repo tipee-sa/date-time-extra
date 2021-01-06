@@ -15,6 +15,11 @@ final class LocalTimeInterval
     /**
      * @var string
      */
+    public const FOREVER_ERROR = 'Creating a LocalTimeInterval with both an infinite start and end is not possible.';
+
+    /**
+     * @var string
+     */
     private const SEPARATOR = '/';
 
     /**
@@ -108,7 +113,7 @@ final class LocalTimeInterval
         try {
             Assert::contains($textToParse, self::SEPARATOR);
             [$firstPart, $secondPart] = explode(self::SEPARATOR, $textToParse);
-            Assert::false(self::INFINITY === $firstPart && self::INFINITY === $secondPart, 'A timepoint is mandatory.');
+            Assert::false(self::INFINITY === $firstPart && self::INFINITY === $secondPart, self::FOREVER_ERROR);
 
             $isFinite = false;
             $hasInfiniteStart = false;

@@ -177,10 +177,24 @@ final class LocalTimeIntervalTest extends TestCase
         );
     }
 
+    public function testFiniteNamedConstructorWithNegativeDurationIsNotSupported(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        LocalTimeInterval::finite(LocalTime::min(), Duration::ofHours(-2));
+    }
+
     public function testOfDaysNamedConstructor(): void
     {
         self::assertSame((string) LocalTimeInterval::parse('00:00/P1D'), (string) LocalTimeInterval::ofDays(1));
         self::assertSame((string) LocalTimeInterval::parse('00:00/P30D'), (string) LocalTimeInterval::ofDays(30));
+    }
+
+    public function testOfDaysNamedConstructorWithNegativeDurationIsNotSupported(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        LocalTimeInterval::ofDays(-2);
     }
 
     /*
