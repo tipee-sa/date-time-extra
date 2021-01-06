@@ -9,7 +9,6 @@ use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Throwable;
 use Webmozart\Assert\Assert;
-use function Gammadia\Collections\Functional\map;
 
 final class LocalTimeInterval
 {
@@ -135,20 +134,6 @@ final class LocalTimeInterval
         }
 
         return new self($timepoint, $duration, self::finitude($isFinite, null === $startTime));
-    }
-
-    public static function containerOf(self ...$localTimeIntervals): self
-    {
-        $container = LocalDateTimeInterval::containerOf(
-            ...map(
-                $localTimeIntervals,
-                static function (self $localTimeInterval): LocalDateTimeInterval {
-                    return $localTimeInterval->atDate(self::arbitraryDate());
-                }
-            )
-        );
-
-        return null !== $container ? self::from($container) : self::empty();
     }
 
     /**

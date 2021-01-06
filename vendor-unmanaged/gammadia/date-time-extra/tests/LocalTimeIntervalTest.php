@@ -246,31 +246,6 @@ final class LocalTimeIntervalTest extends TestCase
         self::assertSame((string) LocalTimeInterval::parse('00:00/P30D'), (string) LocalTimeInterval::ofDays(30));
     }
 
-    public function testContainerOf(): void
-    {
-        self::assertSame((string) LocalTimeInterval::empty(), (string) LocalTimeInterval::containerOf());
-
-        $intervals = [
-            LocalTimeInterval::parse('12:00/PT-2H'),
-            LocalTimeInterval::parse('15:00/PT30M'),
-            LocalTimeInterval::parse('22:00/PT16H'),
-        ];
-
-        self::assertSame('10:00/PT28H', (string) LocalTimeInterval::containerOf(...$intervals));
-
-        $infiniteStartIntervals = [
-            LocalTimeInterval::parse('12:00/PT2H'),
-            LocalTimeInterval::parse('-/15:00'),
-        ];
-        self::assertSame('-/15:00', (string) LocalTimeInterval::containerOf(...$infiniteStartIntervals));
-
-        $infiniteEndIntervals = [
-            LocalTimeInterval::parse('12:00/PT2H'),
-            LocalTimeInterval::parse('15:00/-'),
-        ];
-        self::assertSame('12:00/-', (string) LocalTimeInterval::containerOf(...$infiniteEndIntervals));
-    }
-
     /*
      * Converters tests
      */
