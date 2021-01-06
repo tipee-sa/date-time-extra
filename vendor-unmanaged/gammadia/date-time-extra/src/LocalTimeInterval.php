@@ -54,6 +54,13 @@ final class LocalTimeInterval
 
     private function __construct(LocalTime $timepoint, ?Duration $duration, int $finitude)
     {
+        if (null !== $duration) {
+            Assert::true(
+                $duration->isPositiveOrZero(),
+                sprintf('Negative durations are not supported by %s', self::class)
+            );
+        }
+
         $this->timepoint = $timepoint;
         $this->duration = $duration;
         $this->finitude = $finitude;

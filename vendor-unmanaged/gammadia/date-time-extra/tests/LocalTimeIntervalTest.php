@@ -66,25 +66,7 @@ final class LocalTimeIntervalTest extends TestCase
         yield ['23:59/PT48H', '2020-01-02T23:59/2020-01-04T23:59'];
         yield ['23:59/PT8H24M37S', '2020-01-02T23:59/2020-01-03T08:23:37'];
 
-        // Negative intervals
-        yield ['00:00/PT-12H', '2020-01-01T12:00/2020-01-02T00:00'];
-        yield ['00:00/PT-24H', '2020-01-01T00:00/2020-01-02T00:00'];
-        yield ['00:00/PT-48H', '2019-12-31T00:00/2020-01-02T00:00'];
-        yield ['00:00/PT-8H-24M-37S', '2020-01-01T15:35:23/2020-01-02T00:00'];
-        yield ['12:00/PT-12H', '2020-01-02T00:00/2020-01-02T12:00'];
-        yield ['12:00/PT-24H', '2020-01-01T12:00/2020-01-02T12:00'];
-        yield ['12:00/PT-48H', '2019-12-31T12:00/2020-01-02T12:00'];
-        yield ['12:00/PT-8H-24M-37S', '2020-01-02T03:35:23/2020-01-02T12:00'];
-        yield ['23:59/PT-12H', '2020-01-02T11:59/2020-01-02T23:59'];
-        yield ['23:59/PT-24H', '2020-01-01T23:59/2020-01-02T23:59'];
-        yield ['23:59/PT-48H', '2019-12-31T23:59/2020-01-02T23:59'];
-        yield ['23:59/PT-8H-24M-37S', '2020-01-02T15:34:23/2020-01-02T23:59'];
-
         // Mixed intervals (negative and positives)
-        yield 'Negative overall duration with positive internals' => [
-            '00:00/PT-8H24M-37S',
-            '2020-01-01T16:23:23/2020-01-02T00:00',
-        ];
         yield 'Positive overall duration with negative internals' => [
             '00:00/PT8H-24M37S',
             '2020-01-02T00:00/2020-01-02T07:36:37',
@@ -128,6 +110,12 @@ final class LocalTimeIntervalTest extends TestCase
         yield '24:00 format is not supported' => ['24:00-PT0S'];
         yield 'Two LocalTimes are not supported, use ::between() instead.' => ['08:00/12:00'];
         yield 'Bad separator' => ['08:00-PT12H'];
+
+        // Negative intervals
+        yield ['00:00/PT-12H', '2020-01-01T12:00/2020-01-02T00:00'];
+        yield ['12:00/PT-48H', '2019-12-31T00:00/2020-01-02T00:00'];
+        yield ['23:59:59/PT-8H-24M-37S', '2020-01-01T15:35:23/2020-01-02T00:00'];
+        yield 'Negative overall duration with positive internals' => ['00:00/PT-8H24M-37S'];
     }
 
     /**
