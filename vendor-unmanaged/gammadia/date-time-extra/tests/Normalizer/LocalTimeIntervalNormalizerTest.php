@@ -16,7 +16,7 @@ class LocalTimeIntervalNormalizerTest extends TestCase
     public function testNormalize(): void
     {
         $normalizer = new LocalTimeIntervalNormalizer();
-        $localTimeInterval = LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2));
+        $localTimeInterval = LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::ofHours(2));
 
         self::assertTrue($normalizer->supportsNormalization($localTimeInterval));
         self::assertFalse($normalizer->supportsNormalization(LocalTime::parse('10:15')));
@@ -27,7 +27,7 @@ class LocalTimeIntervalNormalizerTest extends TestCase
     {
         $normalizer = new LocalTimeIntervalNormalizer();
         $iso = '12:34/PT2H';
-        $localTimeInterval = LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2));
+        $localTimeInterval = LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::ofHours(2));
 
         self::assertTrue($normalizer->supportsDenormalization($iso, LocalTimeInterval::class));
         self::assertFalse($normalizer->supportsDenormalization($iso, LocalTime::class));

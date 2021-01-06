@@ -15,6 +15,7 @@ use Gammadia\DateTimeExtra\InstantInterval;
 use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
 
@@ -812,6 +813,32 @@ class LocalDateTimeIntervalTest extends TestCase
             ],
             '2020-01-01T12:00/2020-01-04T00:01',
         ];
+    }
+
+    /**
+     * @dataProvider toLocalTimeInterval
+     */
+    public function testToLocalTimeInterval(string $iso, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalDateTimeInterval::parse($iso)->toLocalTimeInterval());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function toLocalTimeInterval(): iterable
+    {
+        yield 'Hours interval' => ['2020-01-01T12:00/2020-01-01T16:00', '12:00/PT4H'];
+        yield 'Days interval' => ['2020-01-01T12:00/2020-01-03T04:00', '12:00/PT40H'];
+        yield 'Infinite start' => ['-/2020-01-03T04:00', '-/04:00'];
+        yield 'Infinite end' => ['2020-01-01T12:00/-', '12:00/-'];
+    }
+
+    public function testToLocalTimeIntervalInfiniteStartAndEndIsNotSupported(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        LocalDateTimeInterval::forever()->toLocalTimeInterval();
     }
 
     /**

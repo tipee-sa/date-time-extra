@@ -131,6 +131,20 @@ class LocalDateTimeInterval
         );
     }
 
+    public function toLocalTimeInterval(): LocalTimeInterval
+    {
+        Assert::false($this->hasInfiniteStart() && $this->hasInfiniteEnd(), 'A timepoint is mandatory.');
+
+        if ($this->hasInfiniteStart()) {
+            return LocalTimeInterval::until($this->getFiniteEnd()->getTime());
+        }
+        if ($this->hasInfiniteEnd()) {
+            return LocalTimeInterval::since($this->getFiniteStart()->getTime());
+        }
+
+        return LocalTimeInterval::finite($this->getFiniteStart()->getTime(), $this->getDuration());
+    }
+
     /**
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.

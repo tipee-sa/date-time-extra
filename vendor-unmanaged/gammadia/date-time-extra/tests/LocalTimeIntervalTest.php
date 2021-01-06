@@ -165,39 +165,16 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
-            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::zero())
+            (string) LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::zero())
         );
     }
 
-    public function testForNamedConstructor(): void
+    public function testFiniteNamedConstructor(): void
     {
         self::assertSame(
             (string) LocalTimeInterval::parse('12:34/PT2H'),
-            (string) LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2))
+            (string) LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::ofHours(2))
         );
-    }
-
-    /**
-     * @dataProvider validTimeRanges
-     */
-    public function testFromNamedConstructor(LocalDateTimeInterval $timeRange, string $expected): void
-    {
-        $localTimeInterval = LocalTimeInterval::from($timeRange);
-        self::assertSame($expected, (string) $localTimeInterval);
-
-        // Reconstructing the timerange works if you give the exact same date
-        self::assertSame((string) $timeRange, (string) $localTimeInterval->atDate(LocalDate::parse(self::DATE)));
-        self::assertNotSame((string) $timeRange, (string) $localTimeInterval->atDate(LocalDate::parse('2020-01-01')));
-    }
-
-    /**
-     * @dataProvider invalidTimeRanges
-     */
-    public function testFromNamedConstructorDoesntSupportForeverRanges(LocalDateTimeInterval $timeRange): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        LocalTimeInterval::from($timeRange);
     }
 
     public function testOfDaysNamedConstructor(): void
@@ -220,7 +197,7 @@ final class LocalTimeIntervalTest extends TestCase
 
     public function testToString(): void
     {
-        $localTimeInterval = LocalTimeInterval::for(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
+        $localTimeInterval = LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
 
         self::assertSame('12:00/-', (string) LocalTimeInterval::since(LocalTime::parse('12:00')));
         self::assertSame('-/12:00', (string) LocalTimeInterval::until(LocalTime::parse('12:00')));

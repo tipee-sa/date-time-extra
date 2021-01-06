@@ -95,21 +95,9 @@ final class LocalTimeInterval
         return new self(LocalTime::min(), Duration::ofDays($days), self::FINITE);
     }
 
-    public static function for(LocalTime $timepoint, Duration $duration): self
+    public static function finite(LocalTime $timepoint, Duration $duration): self
     {
         return new self($timepoint, $duration, self::FINITE);
-    }
-
-    public static function from(LocalDateTimeInterval $timeRange): self
-    {
-        Assert::false($timeRange->hasInfiniteStart() && $timeRange->hasInfiniteEnd(), 'A timepoint is mandatory.');
-
-        $timepoint = (!$timeRange->hasInfiniteStart() ? $timeRange->getFiniteStart() : $timeRange->getFiniteEnd())
-            ->getTime();
-        $duration = $timeRange->isFinite() ? $timeRange->getDuration() : null;
-        $finitude = self::finitude($timeRange->isFinite(), $timeRange->hasInfiniteStart());
-
-        return new self($timepoint, $duration, $finitude);
     }
 
     /**
