@@ -96,6 +96,7 @@ final class LocalTimeIntervalTest extends TestCase
         yield 'Two LocalTimes are not supported, use ::between() instead.' => ['08:00/12:00'];
         yield 'Bad separator' => ['08:00-PT12H'];
         yield 'Reversed arguments' => ['PT2H/12:00'];
+        yield 'Too many parts' => ['00:00/PT2H/whatever'];
 
         // Negative intervals
         yield ['00:00/PT-12H', '2020-01-01T12:00/2020-01-02T00:00'];
@@ -293,9 +294,12 @@ final class LocalTimeIntervalTest extends TestCase
      */
     public function toFullDays(): iterable
     {
-        yield ['00:00/PT0S', '00:00/PT0S'];
-        yield ['00:00/PT24H', '00:00/PT24H'];
+        yield ['00:00/PT0S', '00:00/PT24H'];
         yield ['00:00/PT4H', '00:00/PT24H'];
+        yield ['00:00/PT24H', '00:00/PT24H'];
+
+        yield ['12:00/PT0S', '00:00/PT24H'];
+        yield ['12:00/PT2H', '00:00/PT24H'];
         yield ['12:00/PT24H', '00:00/PT48H'];
     }
 
@@ -308,7 +312,10 @@ final class LocalTimeIntervalTest extends TestCase
      */
     public function testIsFullDays(string $iso, bool $expected): void
     {
-        self::assertSame($expected, LocalTimeInterval::parse($iso)->isFullDays());
+        $timeInterval = LocalTimeInterval::parse($iso);
+
+        self::assertSame($expected, $timeInterval->isFullDays());
+        self::assertSame($expected, $timeInterval->atDate(LocalDate::parse(self::DATE))->isFullDays());
     }
 
     /**
@@ -316,11 +323,11 @@ final class LocalTimeIntervalTest extends TestCase
      */
     public function isFullDays(): iterable
     {
-        yield ['00:00/PT0S', true];
         yield ['00:00/PT24H', true];
         yield ['00:00/PT48H', true];
         yield ['00:00/P23D', true];
 
+        yield ['00:00/PT0S', false];
         yield ['12:00/PT12H', false];
         yield ['00:00/PT12H', false];
         yield ['00:00/PT24H20M', false];

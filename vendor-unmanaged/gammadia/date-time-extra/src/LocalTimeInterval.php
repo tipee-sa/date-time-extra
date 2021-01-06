@@ -69,7 +69,7 @@ final class LocalTimeInterval
     {
         try {
             Assert::contains($textToParse, self::SEPARATOR);
-            [$firstPart, $secondPart] = explode(self::SEPARATOR, $textToParse);
+            [$firstPart, $secondPart] = explode(self::SEPARATOR, $textToParse, 2);
 
             return new self(LocalTime::parse($firstPart), Duration::parse($secondPart));
         } catch (Throwable $throwable) {
@@ -90,7 +90,7 @@ final class LocalTimeInterval
 
     public function toString(): string
     {
-        return implode(self::SEPARATOR, [$this->timepoint, $this->duration]);
+        return $this->timepoint . self::SEPARATOR . $this->duration;
     }
 
     /*
@@ -133,7 +133,7 @@ final class LocalTimeInterval
     {
         $hasRemainder = !$this->timepoint->isEqualTo(LocalTime::min())
             || 0 !== $this->duration->toMillis() % (LocalTime::SECONDS_PER_DAY * LocalTime::MILLIS_PER_SECOND);
-        $duration = Duration::ofDays($this->duration->toDays() + (int) $hasRemainder);
+        $duration = Duration::ofDays(max(1, $this->duration->toDays() + (int) $hasRemainder));
 
         return new self(LocalTime::min(), $duration);
     }
