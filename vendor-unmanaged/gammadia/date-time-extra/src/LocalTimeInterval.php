@@ -100,7 +100,7 @@ final class LocalTimeInterval
         return new self(LocalTime::min(), Duration::ofDays($days), self::FINITE);
     }
 
-    public static function finite(LocalTime $timepoint, Duration $duration): self
+    public static function between(LocalTime $timepoint, Duration $duration): self
     {
         return new self($timepoint, $duration, self::FINITE);
     }

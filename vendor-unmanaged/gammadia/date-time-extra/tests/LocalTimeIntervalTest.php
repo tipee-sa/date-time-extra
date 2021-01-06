@@ -165,23 +165,23 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
-            (string) LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::zero())
+            (string) LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::zero())
         );
     }
 
-    public function testFiniteNamedConstructor(): void
+    public function testBetweenNamedConstructor(): void
     {
         self::assertSame(
             (string) LocalTimeInterval::parse('12:34/PT2H'),
-            (string) LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::ofHours(2))
+            (string) LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2))
         );
     }
 
-    public function testFiniteNamedConstructorWithNegativeDurationIsNotSupported(): void
+    public function testBetweenNamedConstructorWithNegativeDurationIsNotSupported(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
-        LocalTimeInterval::finite(LocalTime::min(), Duration::ofHours(-2));
+        LocalTimeInterval::between(LocalTime::min(), Duration::ofHours(-2));
     }
 
     public function testOfDaysNamedConstructor(): void
@@ -211,7 +211,7 @@ final class LocalTimeIntervalTest extends TestCase
 
     public function testToString(): void
     {
-        $localTimeInterval = LocalTimeInterval::finite(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
+        $localTimeInterval = LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
 
         self::assertSame('12:00/-', (string) LocalTimeInterval::since(LocalTime::parse('12:00')));
         self::assertSame('-/12:00', (string) LocalTimeInterval::until(LocalTime::parse('12:00')));

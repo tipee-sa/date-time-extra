@@ -150,7 +150,7 @@ class LocalDateTimeInterval
             return LocalTimeInterval::since($this->getFiniteStart()->getTime());
         }
 
-        return LocalTimeInterval::finite($this->getFiniteStart()->getTime(), $this->getDuration());
+        return LocalTimeInterval::between($this->getFiniteStart()->getTime(), $this->getDuration());
     }
 
     /**
