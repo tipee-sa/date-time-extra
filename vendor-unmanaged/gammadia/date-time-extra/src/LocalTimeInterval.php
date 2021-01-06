@@ -52,12 +52,7 @@ final class LocalTimeInterval
      */
     private $finitude;
 
-    /**
-     * @var LocalDate
-     */
-    private static $arbitraryDateCache;
-
-    private function __construct(LocalTime $timepoint, ?Duration $duration = null, int $finitude)
+    private function __construct(LocalTime $timepoint, ?Duration $duration, int $finitude)
     {
         $this->timepoint = $timepoint;
         $this->duration = $duration;
@@ -108,32 +103,6 @@ final class LocalTimeInterval
         $finitude = self::finitude($timeRange->isFinite(), $timeRange->hasInfiniteStart());
 
         return new self($timepoint, $duration, $finitude);
-    }
-
-    public static function between(?LocalTime $startTime, ?LocalTime $endTime): self
-    {
-        Assert::false(null === $startTime && null === $endTime, 'A timepoint is mandatory.');
-
-        $isFinite = false;
-
-        // For finite range, we calculate the duration between the two hour ranges (including overnight scenarios)
-        if (null !== $startTime && null !== $endTime) {
-            $isFinite = true;
-            $start = self::arbitraryDate()->atTime($startTime);
-            $end = self::arbitraryDate()->atTime($endTime);
-            if ($end->isBefore($start)) {
-                $end = $end->plusDays(1);
-            }
-
-            $timepoint = $startTime;
-            $duration = LocalDateTimeInterval::between($start, $end)->getDuration();
-        } else {
-            $timepoint = $endTime ?? $startTime;
-            Assert::notNull($timepoint);
-            $duration = null;
-        }
-
-        return new self($timepoint, $duration, self::finitude($isFinite, null === $startTime));
     }
 
     /**
@@ -303,15 +272,6 @@ final class LocalTimeInterval
     private static function finitude(bool $isFinite, bool $hasInfiniteStart): int
     {
         return $isFinite ? self::FINITE : ($hasInfiniteStart ? self::INFINITE_START : self::INFINITE_END);
-    }
-
-    private static function arbitraryDate(): LocalDate
-    {
-        if (null === self::$arbitraryDateCache) {
-            self::$arbitraryDateCache = LocalDate::parse('2020-01-02');
-        }
-
-        return self::$arbitraryDateCache;
     }
 
     private function isDurationEqualTo(?Duration $other): bool

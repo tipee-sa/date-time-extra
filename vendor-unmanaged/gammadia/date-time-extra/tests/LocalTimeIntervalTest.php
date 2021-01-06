@@ -212,34 +212,6 @@ final class LocalTimeIntervalTest extends TestCase
         LocalTimeInterval::from($timeRange);
     }
 
-    /**
-     * @dataProvider between
-     */
-    public function testBetween(string $expectedIso, ?string $startTimeIso, ?string $endTimeIso): void
-    {
-        $startTime = null !== $startTimeIso ? LocalTime::parse($startTimeIso) : null;
-        $endTime = null !== $endTimeIso ? LocalTime::parse($endTimeIso) : null;
-
-        self::assertSame($expectedIso, (string) LocalTimeInterval::between($startTime, $endTime));
-    }
-
-    /**
-     * @return iterable<mixed>
-     */
-    public function between(): iterable
-    {
-        yield 'Two midnights equals an empty duration starting at midnight.' => ['00:00/PT0S', '00:00', '00:00'];
-
-        yield ['00:00/PT12H', '00:00', '12:00'];
-        yield ['12:00/PT12H', '12:00', '00:00'];
-        yield ['00:00/PT1M', '00:00', '00:01'];
-        yield ['00:00/PT23H59M', '00:00', '23:59'];
-        yield ['18:00/PT14H', '18:00', '08:00'];
-
-        yield ['18:00/-', '18:00', null];
-        yield ['-/18:00', null, '18:00'];
-    }
-
     public function testOfDaysNamedConstructor(): void
     {
         self::assertSame((string) LocalTimeInterval::parse('00:00/P1D'), (string) LocalTimeInterval::ofDays(1));
