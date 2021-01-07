@@ -57,6 +57,11 @@ class LocalDateTimeInterval
         return new self($start, $end);
     }
 
+    public static function empty(LocalDateTime $at): self
+    {
+        return self::between($at, $at);
+    }
+
     /**
      * Creates an infinite half-open interval since given start.
      *
