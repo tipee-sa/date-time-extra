@@ -58,7 +58,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $m1 = $t1->atTimeZone(TimeZoneOffset::utc())->getInstant();
         $m2 = $t2->atTimeZone(TimeZoneOffset::utc())->getInstant();
 
-        self::assertTrue(LocalDateTimeInterval::between($t1, $t2)->atUTC()->equals(InstantInterval::between($m1, $m2)));
+        self::assertTrue(LocalDateTimeInterval::between($t1, $t2)->atUTC()->isEqualTo(InstantInterval::between($m1, $m2)));
     }
 
     public function testInTimezoneSaoPaulo(): void
@@ -69,7 +69,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $ldt2 = LocalDateTime::of(2016, 10, 16, 2, 0);
 
         self::assertTrue(
-            LocalDateTimeInterval::between($ldt1, $ldt2)->atTimeZone($saoPaulo)->equals(
+            LocalDateTimeInterval::between($ldt1, $ldt2)->atTimeZone($saoPaulo)->isEqualTo(
                 ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))
             )
         );
