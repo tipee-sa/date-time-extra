@@ -429,6 +429,7 @@ class LocalDateTimeIntervalTest extends TestCase
             '2009|2011' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2011-01-01T00:00:00'),
             '2009|2012' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2012-01-01T00:00:00'),
             '2009|2013' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2010|2010' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2010-01-01T00:00:00'),
             '2010|2011' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2011-01-01T00:00:00'),
             '2010|2012' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2012-01-01T00:00:00'),
             '2010|2013' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2013-01-01T00:00:00'),
@@ -588,6 +589,8 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertNull($this->interval('2013|2014')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('2013|----')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2013')));
+        self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2010')));
+        self::assertNull($this->interval('2010|----')->findIntersection($this->interval('2010|2010')));
 
         $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
         self::assertTrue($intersection && $this->interval('2010|2011')->isEqualTo($intersection));
@@ -600,6 +603,12 @@ class LocalDateTimeIntervalTest extends TestCase
 
         $intersection4 = $this->interval('2011|2014')->findIntersection($this->interval('2010|2013'));
         self::assertTrue($intersection4 && $this->interval('2011|2013')->isEqualTo($intersection4));
+
+        $intersection5 = $this->interval('----|2014')->findIntersection($this->interval('2011|2012'));
+        self::assertTrue($intersection5 && $this->interval('2011|2012')->isEqualTo($intersection5));
+
+        $intersection6 = $this->interval('----|2014')->findIntersection($this->interval('2011|2011'));
+        self::assertTrue($intersection6 && $this->interval('2011|2011')->isEqualTo($intersection6));
     }
 
     public function testFinishes(): void
@@ -903,6 +912,15 @@ class LocalDateTimeIntervalTest extends TestCase
         ];
         yield [
             '2020-01-01T00:00/2020-01-03T01:00',
+            [
+                '2020-01-01T00:00/2020-01-02T00:00',
+                '2020-01-02T00:00/2020-01-03T00:00',
+                '2020-01-03T00:00/2020-01-04T00:00',
+            ],
+        ];
+
+        yield [
+            '2020-01-01T00:00/2020-01-04T00:00',
             [
                 '2020-01-01T00:00/2020-01-02T00:00',
                 '2020-01-02T00:00/2020-01-03T00:00',

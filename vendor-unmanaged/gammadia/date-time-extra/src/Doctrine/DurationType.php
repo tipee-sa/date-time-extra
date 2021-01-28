@@ -17,11 +17,13 @@ class DurationType extends Type
     }
 
     /**
-     * @param Duration $value
+     * @param Duration|null $value
      */
-    public function convertToDatabaseValue($value, AbstractPlatform $platform): int
+    public function convertToDatabaseValue($value, AbstractPlatform $platform): ?int
     {
-        return (int) round($value->toMillis() / LocalTime::MILLIS_PER_SECOND, 0, PHP_ROUND_HALF_EVEN);
+        return null !== $value
+            ? (int) round($value->toMillis() / LocalTime::MILLIS_PER_SECOND, 0, PHP_ROUND_HALF_EVEN)
+            : null;
     }
 
     /**
@@ -29,7 +31,9 @@ class DurationType extends Type
      */
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
-        return Duration::ofSeconds($value);
+        return null !== $value
+            ? Duration::ofSeconds((int) $value)
+            : null;
     }
 
     /**

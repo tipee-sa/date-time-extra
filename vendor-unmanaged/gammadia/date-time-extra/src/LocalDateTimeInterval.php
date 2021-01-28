@@ -760,14 +760,22 @@ class LocalDateTimeInterval
     public function findIntersection(self $other): ?self
     {
         if ($this->intersects($other)) {
-            if ($this->hasInfiniteStart() || $other->hasInfiniteStart()) {
+            if ($this->hasInfiniteStart() && $other->hasInfiniteStart()) {
                 $start = null;
+            } elseif ($this->hasInfiniteStart()) {
+                $start = $other->getFiniteStart();
+            } elseif ($other->hasInfiniteStart()) {
+                $start = $this->getFiniteStart();
             } else {
                 $start = LocalDateTime::maxOf($this->getFiniteStart(), $other->getFiniteStart());
             }
 
-            if ($this->hasInfiniteEnd() || $other->hasInfiniteEnd()) {
+            if ($this->hasInfiniteEnd() && $other->hasInfiniteEnd()) {
                 $end = null;
+            } elseif ($this->hasInfiniteEnd()) {
+                $end = $other->getFiniteEnd();
+            } elseif ($other->hasInfiniteEnd()) {
+                $end = $this->getFiniteEnd();
             } else {
                 $end = LocalDateTime::minOf($this->getFiniteEnd(), $other->getFiniteEnd());
             }
