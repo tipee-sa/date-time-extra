@@ -20,13 +20,14 @@ final class DurationHelper
     {
         return Duration::ofMillis((int) round(
             $hours * LocalTime::SECONDS_PER_HOUR * LocalTime::MILLIS_PER_SECOND,
+            0,
             PHP_ROUND_HALF_EVEN
         ));
     }
 
     public static function applyPercentage(Duration $duration, Percentage $rate): Duration
     {
-        return Duration::ofMillis((int) round($duration->toMillis() * $rate->factor(), PHP_ROUND_HALF_EVEN));
+        return Duration::ofMillis((int) round($duration->toMillis() * $rate->factor(), 0, PHP_ROUND_HALF_EVEN));
     }
 
     public static function distributeDuration(

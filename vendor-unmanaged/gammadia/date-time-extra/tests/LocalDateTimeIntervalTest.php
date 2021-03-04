@@ -716,6 +716,29 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertTrue($_this->interval('2009|2010')->overlaps($this->interval('2010|2013', '-PT1S')));
     }
 
+    /**
+     * @dataProvider overlaps
+     */
+    public function testOverlapsWithIsoStrings(string $a, string $b, bool $expected): void
+    {
+        self::assertSame($expected, LocalDateTimeInterval::parse($a)->overlaps(LocalDateTimeInterval::parse($b)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function overlaps(): iterable
+    {
+        $timeRange = '2020-01-02T14:00/2020-01-02T18:00';
+        yield 'overlaps = starts before + finishes within' => ['2020-01-02T08:00/2020-01-02T16:00', $timeRange, true];
+
+        yield 'precedes' => ['2020-01-02T08:00/2020-01-02T12:00', $timeRange, false];
+        yield 'meets' => ['2020-01-02T08:00/2020-01-02T14:00', $timeRange, false];
+        yield 'encloses' => ['2020-01-02T08:00/2020-01-02T20:00', $timeRange, false];
+        yield 'metBy' => ['2020-01-02T18:00/2020-01-02T20:00', $timeRange, false];
+        yield 'precededBy' => ['2020-01-02T20:00/2020-01-02T22:00', $timeRange, false];
+    }
+
     public function testOverlappedBy(): void
     {
         $_this = $this;
