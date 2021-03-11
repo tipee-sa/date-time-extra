@@ -147,7 +147,7 @@ class LocalDateTimeInterval
             $this->hasInfiniteEnd() ? null : (
                 $this->getFiniteEnd()->getTime()->isEqualTo(LocalTime::min()) &&
                 // This allows to deal with empty ranges
-                !$this->getFiniteEnd()->isEqualTo($this->getFiniteStart())
+                ($this->hasInfiniteStart() || !$this->getFiniteEnd()->isEqualTo($this->getFiniteStart()))
                     ? $this->getFiniteEnd()
                     : $this->getFiniteEnd()->plusDays(1)->withTime(LocalTime::min())
             )
