@@ -802,6 +802,32 @@ class LocalDateTimeInterval
         ;
     }
 
+    public function compareTo(LocalDateTimeInterval $other): int
+    {
+        if ($this->hasInfiniteStart()) {
+            if (!$other->hasInfiniteStart()) {
+                return -1;
+            }
+        } elseif ($other->hasInfiniteStart()) {
+            return 1;
+        } else {
+            $order = $this->getFiniteStart()->compareTo($other->getFiniteStart());
+            if (0 !== $order) {
+                return $order;
+            }
+        }
+        // At this point, both intervals have the same start
+
+        if ($this->hasInfiniteEnd()) {
+            return $other->hasInfiniteEnd() ? 0 : 1;
+        }
+        if ($other->hasInfiniteEnd()) {
+            return -1;
+        }
+
+        return $this->getFiniteEnd()->compareTo($other->getFiniteEnd());
+    }
+
     /**
      * Determines if this interval has finite boundaries.
      */
