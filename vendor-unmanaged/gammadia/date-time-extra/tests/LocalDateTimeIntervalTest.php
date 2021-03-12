@@ -949,4 +949,66 @@ class LocalDateTimeIntervalTest extends TestCase
         yield ['2020-01-01T00:00/2020-01-02T00:00', '2020-01-01T23:59:59.999999999'];
         yield ['2020-01-01T00:00/2020-01-01T12:34:56', '2020-01-01T12:34:55.999999999'];
     }
+
+    /**
+     * @dataProvider compareTo
+     */
+    public function testCompareTo(string $a, string $b, int $expected): void
+    {
+        self::assertSame($expected, LocalDateTimeInterval::parse($a)->compareTo(LocalDateTimeInterval::parse($b)));
+        self::assertSame(-$expected, LocalDateTimeInterval::parse($b)->compareTo(LocalDateTimeInterval::parse($a)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function compareTo(): iterable
+    {
+        $ref = '2020-01-02T00:00/2020-01-03T00:00';
+
+        /** @see https://en.wikipedia.org/wiki/Allen's_interval_algebra#Relations */
+        yield 'precedes' => ['2020-01-01T00:00/2020-01-01T12:00', $ref, -1];
+        yield 'isPrecededBy' => ['2020-01-04T00:00/2020-01-05T00:00', $ref, 1];
+        yield 'meets' => ['2020-01-01T00:00/2020-01-02T00:00', $ref, -1];
+        yield 'metBy' => ['2020-01-03T00:00/2020-01-04T00:00', $ref, 1];
+        yield 'overlaps' => ['2020-01-01T00:00/2020-01-02T12:00', $ref, -1];
+        yield 'overlappedBy' => ['2020-01-02T12:00/2020-01-04T00:00', $ref, 1];
+        yield 'starts' => ['2020-01-02T00:00/2020-01-02T12:00', $ref, -1];
+        yield 'startsBy' => ['2020-01-02T00:00/2020-01-04T00:00', $ref, 1];
+        yield 'during' => ['2020-01-02T08:00/2020-01-02T16:00', $ref, 1];
+        yield 'contains' => ['2020-01-01T12:00/2020-01-03T12:00', $ref, -1];
+        yield 'finishes' => ['2020-01-02T12:00/2020-01-03T00:00', $ref, 1];
+        yield 'finishedBy' => ['2020-01-01T12:00/2020-01-03T00:00', $ref, -1];
+        yield 'equalTo' => [$ref, $ref, 0];
+
+        // Infinite starts
+        yield 'precedes infinite start' => ['-/2020-01-01T00:00', $ref, -1];
+        yield 'meets infinite start' => ['-/2020-01-02T00:00', $ref, -1];
+        yield 'overlaps infinite start' => ['-/2020-01-02T12:00', $ref, -1];
+        yield 'finishedBy infinite start' => ['-/2020-01-03T00:00', $ref, -1];
+        yield 'contains infinite start' => ['-/2020-01-04T00:00', $ref, -1];
+        yield 'starts infinite start' => ['-/2020-01-02T00:00', '-/2020-01-03T00:00', -1];
+
+        yield 'equalTo infinite start' => ['-/2020-01-03T00:00', '-/2020-01-03T00:00', 0];
+        yield 'infinite start finishing after infinite start ref' => ['-/2020-01-04T00:00', '-/2020-01-03T00:00', 1];
+
+        // Infinite ends
+        yield 'contains infinite end' => ['2020-01-01T00:00/-', $ref, -1];
+        yield 'startsBy infinite end' => ['2020-01-02T00:00/-', $ref, 1];
+        yield 'overlappedBy infinite end' => ['2020-01-02T12:00/-', $ref, 1];
+        yield 'metBy infinite end' => ['2020-01-03T00:00/-', $ref, 1];
+        yield 'isPrecededBy infinite end' => ['2020-01-04T00:00/-', $ref, 1];
+        yield 'finishes infinite end' => ['2020-01-03T00:00/-', '2020-01-02T00:00/-', 1];
+
+        yield 'equalTo infinite end' => ['2020-01-03T00:00/-', '2020-01-03T00:00/-', 0];
+        yield 'infinite end starting after infinite end ref' => ['2020-01-04T00:00/-', '2020-01-03T00:00/-', 1];
+
+        // Multiple infinites
+        yield 'equalTo with one infinite start + one infinite end' => ['-/2020-01-03T00:00', '2020-01-02T00:00/-', -1];
+
+        yield 'Full infinite compared to full range' => ['-/-', '2020-01-02T00:00/2020-01-03T00:00', -1];
+        yield 'Full infinite compared to infinite start' => ['-/-', '-/2020-01-03T00:00', 1];
+        yield 'Full infinite compared to infinite end' => ['-/-', '2020-01-02T00:00/-', -1];
+        yield 'Equal full infinite' => ['-/-', '-/-', 0];
+    }
 }
