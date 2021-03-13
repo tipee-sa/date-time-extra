@@ -802,7 +802,7 @@ class LocalDateTimeInterval
         ;
     }
 
-    public function compareTo(LocalDateTimeInterval $other): int
+    public function compareTo(self $other): int
     {
         if ($this->hasInfiniteStart()) {
             if (!$other->hasInfiniteStart()) {
