@@ -8,11 +8,12 @@ use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
+use JsonSerializable;
 use Symfony\Component\String\ByteString;
 use function Gammadia\Collections\Functional\contains;
 use function Gammadia\Collections\Functional\map;
 
-class LocalDateInterval
+class LocalDateInterval implements JsonSerializable
 {
     /**
      * @var LocalDate|null
@@ -35,6 +36,11 @@ class LocalDateInterval
     }
 
     public function __toString(): string
+    {
+        return $this->toString();
+    }
+
+    public function jsonSerialize(): string
     {
         return $this->toString();
     }
