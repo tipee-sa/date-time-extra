@@ -389,11 +389,14 @@ class LocalDateTimeInterval
     }
 
     /**
-     * @return Traversable<self>
+     * @return LocalDate[]
      */
-    public function days(): Traversable
+    public function days(): array
     {
-        return $this->toFullDays()->slice(Period::ofDays(1));
+        $dateRange = LocalDateInterval::containerOf($this);
+        Assert::notNull($dateRange);
+
+        return $dateRange->days();
     }
 
     /**

@@ -199,11 +199,11 @@ class LocalDateInterval
     }
 
     /**
-     * @return \Traversable<LocalDate>
+     * @return LocalDate[]
      */
-    public function days(): \Traversable
+    public function days(): array
     {
-        return $this->iterate(Period::ofDays(1));
+        return iterator_to_array($this->iterate(Period::ofDays(1)), false);
     }
 
     /**
