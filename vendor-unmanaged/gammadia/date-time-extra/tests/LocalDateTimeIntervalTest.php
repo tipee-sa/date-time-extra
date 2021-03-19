@@ -906,12 +906,9 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         self::assertSame(
             $expected,
-            map(
-                iterator_to_array(LocalDateTimeInterval::parse($input)->days()),
-                static function (LocalDateTimeInterval $timeRange): string {
-                    return (string) $timeRange;
-                }
-            )
+            map(LocalDateTimeInterval::parse($input)->days(), static function (LocalDate $day): string {
+                return (string) $day;
+            })
         );
     }
 
@@ -923,31 +920,31 @@ class LocalDateTimeIntervalTest extends TestCase
         yield [
             '2020-01-01T00:00/2020-01-02T00:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
+                '2020-01-01',
             ],
         ];
         yield [
             '2020-01-01T12:00/2020-01-02T12:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
-                '2020-01-02T00:00/2020-01-03T00:00',
+                '2020-01-01',
+                '2020-01-02',
             ],
         ];
         yield [
             '2020-01-01T00:00/2020-01-03T01:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
-                '2020-01-02T00:00/2020-01-03T00:00',
-                '2020-01-03T00:00/2020-01-04T00:00',
+                '2020-01-01',
+                '2020-01-02',
+                '2020-01-03',
             ],
         ];
 
         yield [
             '2020-01-01T00:00/2020-01-04T00:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
-                '2020-01-02T00:00/2020-01-03T00:00',
-                '2020-01-03T00:00/2020-01-04T00:00',
+                '2020-01-01',
+                '2020-01-02',
+                '2020-01-03',
             ],
         ];
     }
