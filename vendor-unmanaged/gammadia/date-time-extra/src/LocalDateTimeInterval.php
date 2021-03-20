@@ -16,6 +16,7 @@ use Symfony\Component\String\ByteString;
 use Traversable;
 use Webmozart\Assert\Assert;
 use function Gammadia\Collections\Functional\contains;
+use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
 class LocalDateTimeInterval implements JsonSerializable
@@ -757,6 +758,23 @@ class LocalDateTimeInterval implements JsonSerializable
         }
 
         return self::between($this->start, $this->start);
+    }
+
+    /**
+     * @param LocalDateTimeInterval|null ...$others Null can come from the result of {@see containerOf()}
+     */
+    public function expand(?self ...$others): self
+    {
+        // Filter out null results
+        $others = filter($others);
+        if (empty($others)) {
+            return $this;
+        }
+
+        $expanded = self::containerOf($this, ...$others);
+        Assert::notNull($expanded);
+
+        return $expanded;
     }
 
     /**

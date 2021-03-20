@@ -847,6 +847,60 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
+     * @dataProvider expand
+     *
+     * @param array<int, string|null> $others
+     */
+    public function testExpand(string $iso, array $others, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateTimeInterval::parse($iso)->expand(
+                ...map($others, static function (?string $timeRange): ?LocalDateTimeInterval {
+                    return null !== $timeRange ? LocalDateTimeInterval::parse($timeRange) : null;
+                })
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function expand(): iterable
+    {
+        $iso = '2020-01-02T08:00/2020-01-02T12:00';
+
+        // Not actually expanding anything
+        yield 'Empty others yield same range' => [$iso, [], $iso];
+        yield 'Empty others because of null values yield same range' => [$iso, [null], $iso];
+        yield 'Nulls mixed with ranges are skipped' => [$iso, [null, '2020-01-02T10:00/2020-01-02T12:00', null], $iso];
+
+        // Expanding
+        yield 'Expanding start (ends before range, finite)' => [$iso, ['2020-01-02T07:00/2020-01-02T07:30'], '2020-01-02T07:00/2020-01-02T12:00'];
+        yield 'Expanding start (ends before range, infinite)' => [$iso, ['-/2020-01-02T07:30'], '-/2020-01-02T12:00'];
+        yield 'Expanding start (ends in range, finite)' => [$iso, ['2020-01-02T07:00/2020-01-02T09:30'], '2020-01-02T07:00/2020-01-02T12:00'];
+        yield 'Expanding start (ends in range, infinite)' => [$iso, ['-/2020-01-02T09:30'], '-/2020-01-02T12:00'];
+
+        yield 'Expanding end (starts in range, finite)' => [$iso, ['2020-01-02T11:00/2020-01-02T14:30'], '2020-01-02T08:00/2020-01-02T14:30'];
+        yield 'Expanding end (starts in range, infinite)' => [$iso, ['2020-01-02T11:00/-'], '2020-01-02T08:00/-'];
+        yield 'Expanding end (starts after range, finite)' => [$iso, ['2020-01-02T14:30/2020-01-02T19:00'], '2020-01-02T08:00/2020-01-02T19:00'];
+        yield 'Expanding end (starts after range, infinite)' => [$iso, ['2020-01-02T14:30/-'], '2020-01-02T08:00/-'];
+
+        yield 'Expanding both (finite)' => [$iso, ['2020-01-02T07:00/2020-01-02T14:30'], '2020-01-02T07:00/2020-01-02T14:30'];
+        yield 'Expanding both (infinite)' => [$iso, ['-/-'], '-/-'];
+
+        yield 'Expand from multiple ranges' => [
+            $iso,
+            [
+                '2020-01-02T07:00/2020-01-02T07:30',
+                '2020-01-02T11:00/2020-01-02T11:30',
+                '2020-01-02T18:00/2020-01-03T08:00',
+            ],
+            '2020-01-02T07:00/2020-01-03T08:00',
+        ];
+    }
+
+    /**
      * @dataProvider toFullDays
      */
     public function testToFullDays(string $input, string $expected): void

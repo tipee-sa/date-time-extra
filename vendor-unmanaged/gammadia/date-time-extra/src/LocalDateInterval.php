@@ -10,7 +10,9 @@ use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneRegion;
 use JsonSerializable;
 use Symfony\Component\String\ByteString;
+use Webmozart\Assert\Assert;
 use function Gammadia\Collections\Functional\contains;
+use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
 class LocalDateInterval implements JsonSerializable
@@ -114,6 +116,23 @@ class LocalDateInterval implements JsonSerializable
             contains($starts, null, true) ? null : LocalDate::minOf(...$starts),
             contains($ends, null, true) ? null : LocalDate::maxOf(...$ends)
         );
+    }
+
+    /**
+     * @param self|LocalDateTimeInterval|null ...$others Null can come from the result of {@see containerOf()}
+     */
+    public function expand(...$others): self
+    {
+        $others = filter($others);
+        if (empty($others)) {
+            return $this;
+        }
+        Assert::allIsInstanceOfAny($others, [self::class, LocalDateTimeInterval::class]);
+
+        $expanded = self::containerOf($this, ...$others);
+        Assert::notNull($expanded);
+
+        return $expanded;
     }
 
     /**
