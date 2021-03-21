@@ -723,6 +723,13 @@ class LocalDateTimeInterval implements JsonSerializable
      */
     public function intersects(self $other): bool
     {
+        if ($this->isEmpty()) {
+            return $other->contains($this->getFiniteStart());
+        }
+        if ($other->isEmpty()) {
+            return $this->contains($other->getFiniteStart());
+        }
+
         return
             (
                 $this->hasInfiniteStart() ||

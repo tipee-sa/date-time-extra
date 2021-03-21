@@ -583,6 +583,47 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertTrue($_this->interval('2013|----')->intersects($this->interval('2010|2013', '+PT1S')));
     }
 
+    /**
+     * @dataProvider intersects
+     */
+    public function testIntersectsWithIsoStrings(string $a, string $b, bool $expected): void
+    {
+        self::assertSame($expected, LocalDateTimeInterval::parse($a)->intersects(LocalDateTimeInterval::parse($b)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function intersects(): iterable
+    {
+        $timeRange = '2020-01-02T14:00/2020-01-02T18:00';
+
+        yield 'Same range' => [$timeRange, $timeRange, true];
+
+        yield 'Starting before, ending at range start' => [$timeRange, '2020-01-02T12:00/2020-01-02T14:00', false];
+        yield 'Starting before, ending in range' => [$timeRange, '2020-01-02T12:00/2020-01-02T17:00', true];
+        yield 'Starting before, ending at range end' => [$timeRange, '2020-01-02T12:00/2020-01-02T18:00', true];
+        yield 'Starting before, ending after range' => [$timeRange, '2020-01-02T12:00/2020-01-02T20:00', true];
+
+        yield 'Starting in, ending in range' => [$timeRange, '2020-01-02T16:00/2020-01-02T17:00', true];
+        yield 'Starting in, ending at range end' => [$timeRange, '2020-01-02T16:00/2020-01-02T18:00', true];
+        yield 'Starting in, ending after range' => [$timeRange, '2020-01-02T15:00/2020-01-02T20:00', true];
+
+        yield 'Starting exactly at range end' => [$timeRange, '2020-01-02T18:00/2020-01-02T20:00', false];
+
+        yield 'Range contains empty range: before range' => [$timeRange, '2020-01-02T12:00/2020-01-02T12:00', false];
+        yield 'Range contains empty range: exactly at range start' => [$timeRange, '2020-01-02T14:00/2020-01-02T14:00', true];
+        yield 'Range contains empty range: in range' => [$timeRange, '2020-01-02T16:00/2020-01-02T16:00', true];
+        yield 'Range contains empty range: exactly at range end' => [$timeRange, '2020-01-02T18:00/2020-01-02T18:00', false];
+        yield 'Range contains empty range: after range' => [$timeRange, '2020-01-02T20:00/2020-01-02T20:00', false];
+
+        yield 'Empty range contains range: before range' => ['2020-01-02T12:00/2020-01-02T12:00', $timeRange, false];
+        yield 'Empty range contains range: exactly at range start' => ['2020-01-02T14:00/2020-01-02T14:00', $timeRange, true];
+        yield 'Empty range contains range: in range' => ['2020-01-02T16:00/2020-01-02T16:00', $timeRange, true];
+        yield 'Empty range contains range: exactly at range end' => ['2020-01-02T18:00/2020-01-02T18:00', $timeRange, false];
+        yield 'Empty range contains range: after range' => ['2020-01-02T20:00/2020-01-02T20:00', $timeRange, false];
+    }
+
     public function testFindIntersection(): void
     {
         self::assertNull($this->interval('2009|2010')->findIntersection($this->interval('2010|2013')));
@@ -590,7 +631,10 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertNull($this->interval('2013|----')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2010')));
-        self::assertNull($this->interval('2010|----')->findIntersection($this->interval('2010|2010')));
+        self::assertNull($this->interval('2010|2010')->findIntersection($this->interval('2011|2011')));
+
+        $intersection = $this->interval('2010|----')->findIntersection($this->interval('2010|2010'));
+        self::assertTrue($intersection && $this->interval('2010|2010')->isEqualTo($intersection));
 
         $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
         self::assertTrue($intersection && $this->interval('2010|2011')->isEqualTo($intersection));
