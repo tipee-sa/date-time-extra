@@ -646,6 +646,56 @@ class LocalDateIntervalTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider expand
+     *
+     * @param array<int, string|null> $others
+     */
+    public function testExpand(string $iso, array $others, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateInterval::parse($iso)->expand(
+                ...map($others, static function (?string $timeRange): ?LocalDateInterval {
+                    return null !== $timeRange ? LocalDateInterval::parse($timeRange) : null;
+                })
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function expand(): iterable
+    {
+        $iso = '2020-01-02/2020-01-02';
+
+        // Not actually expanding anything
+        yield 'Empty others yield same range' => [$iso, [], $iso];
+        yield 'Empty others because of null values yield same range' => [$iso, [null], $iso];
+        yield 'Nulls mixed with ranges are skipped' => [$iso, [null, $iso, null], $iso];
+
+        // Expanding
+        yield 'Expanding start (finite)' => [$iso, ['2020-01-01/2020-01-02'], '2020-01-01/2020-01-02'];
+        yield 'Expanding start (infinite)' => [$iso, ['-/2020-01-02'], '-/2020-01-02'];
+
+        yield 'Expanding end (finite)' => [$iso, ['2020-01-02/2020-01-03'], '2020-01-02/2020-01-03'];
+        yield 'Expanding end (infinite)' => [$iso, ['2020-01-02/-'], '2020-01-02/-'];
+
+        yield 'Expanding both (finite)' => [$iso, ['2020-01-01/2020-01-03'], '2020-01-01/2020-01-03'];
+        yield 'Expanding both (infinite)' => [$iso, ['-/-'], '-/-'];
+
+        yield 'Expand from multiple ranges' => [
+            $iso,
+            [
+                '2020-01-01/2020-01-02',
+                '2020-01-04/2020-01-05',
+                '2020-01-06/2020-01-10',
+            ],
+            '2020-01-01/2020-01-10',
+        ];
+    }
+
     private function interval(string $i, string $strDuration = ''): LocalDateInterval
     {
         $intervals = [

@@ -11,13 +11,15 @@ use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
+use JsonSerializable;
 use Symfony\Component\String\ByteString;
 use Traversable;
 use Webmozart\Assert\Assert;
 use function Gammadia\Collections\Functional\contains;
+use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
-class LocalDateTimeInterval
+class LocalDateTimeInterval implements JsonSerializable
 {
     /**
      * @var LocalDateTime|null
@@ -40,6 +42,11 @@ class LocalDateTimeInterval
     }
 
     public function __toString(): string
+    {
+        return $this->toString();
+    }
+
+    public function jsonSerialize(): string
     {
         return $this->toString();
     }
@@ -389,11 +396,14 @@ class LocalDateTimeInterval
     }
 
     /**
-     * @return Traversable<self>
+     * @return LocalDate[]
      */
-    public function days(): Traversable
+    public function days(): array
     {
-        return $this->toFullDays()->slice(Period::ofDays(1));
+        $dateRange = LocalDateInterval::containerOf($this);
+        Assert::notNull($dateRange);
+
+        return $dateRange->days();
     }
 
     /**
@@ -713,6 +723,13 @@ class LocalDateTimeInterval
      */
     public function intersects(self $other): bool
     {
+        if ($this->isEmpty()) {
+            return $other->contains($this->getFiniteStart());
+        }
+        if ($other->isEmpty()) {
+            return $this->contains($other->getFiniteStart());
+        }
+
         return
             (
                 $this->hasInfiniteStart() ||
@@ -748,6 +765,23 @@ class LocalDateTimeInterval
         }
 
         return self::between($this->start, $this->start);
+    }
+
+    /**
+     * @param LocalDateTimeInterval|null ...$others Null can come from the result of {@see containerOf()}
+     */
+    public function expand(?self ...$others): self
+    {
+        // Filter out null results
+        $others = filter($others);
+        if (empty($others)) {
+            return $this;
+        }
+
+        $expanded = self::containerOf($this, ...$others);
+        Assert::notNull($expanded);
+
+        return $expanded;
     }
 
     /**

@@ -7,10 +7,11 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\Duration;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
+use JsonSerializable;
 use Throwable;
 use Webmozart\Assert\Assert;
 
-final class LocalTimeInterval
+final class LocalTimeInterval implements JsonSerializable
 {
     /**
      * @var string
@@ -39,6 +40,11 @@ final class LocalTimeInterval
     }
 
     public function __toString(): string
+    {
+        return $this->toString();
+    }
+
+    public function jsonSerialize(): string
     {
         return $this->toString();
     }

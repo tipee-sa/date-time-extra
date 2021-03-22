@@ -583,6 +583,47 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertTrue($_this->interval('2013|----')->intersects($this->interval('2010|2013', '+PT1S')));
     }
 
+    /**
+     * @dataProvider intersects
+     */
+    public function testIntersectsWithIsoStrings(string $a, string $b, bool $expected): void
+    {
+        self::assertSame($expected, LocalDateTimeInterval::parse($a)->intersects(LocalDateTimeInterval::parse($b)));
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function intersects(): iterable
+    {
+        $timeRange = '2020-01-02T14:00/2020-01-02T18:00';
+
+        yield 'Same range' => [$timeRange, $timeRange, true];
+
+        yield 'Starting before, ending at range start' => [$timeRange, '2020-01-02T12:00/2020-01-02T14:00', false];
+        yield 'Starting before, ending in range' => [$timeRange, '2020-01-02T12:00/2020-01-02T17:00', true];
+        yield 'Starting before, ending at range end' => [$timeRange, '2020-01-02T12:00/2020-01-02T18:00', true];
+        yield 'Starting before, ending after range' => [$timeRange, '2020-01-02T12:00/2020-01-02T20:00', true];
+
+        yield 'Starting in, ending in range' => [$timeRange, '2020-01-02T16:00/2020-01-02T17:00', true];
+        yield 'Starting in, ending at range end' => [$timeRange, '2020-01-02T16:00/2020-01-02T18:00', true];
+        yield 'Starting in, ending after range' => [$timeRange, '2020-01-02T15:00/2020-01-02T20:00', true];
+
+        yield 'Starting exactly at range end' => [$timeRange, '2020-01-02T18:00/2020-01-02T20:00', false];
+
+        yield 'Range contains empty range: before range' => [$timeRange, '2020-01-02T12:00/2020-01-02T12:00', false];
+        yield 'Range contains empty range: exactly at range start' => [$timeRange, '2020-01-02T14:00/2020-01-02T14:00', true];
+        yield 'Range contains empty range: in range' => [$timeRange, '2020-01-02T16:00/2020-01-02T16:00', true];
+        yield 'Range contains empty range: exactly at range end' => [$timeRange, '2020-01-02T18:00/2020-01-02T18:00', false];
+        yield 'Range contains empty range: after range' => [$timeRange, '2020-01-02T20:00/2020-01-02T20:00', false];
+
+        yield 'Empty range contains range: before range' => ['2020-01-02T12:00/2020-01-02T12:00', $timeRange, false];
+        yield 'Empty range contains range: exactly at range start' => ['2020-01-02T14:00/2020-01-02T14:00', $timeRange, true];
+        yield 'Empty range contains range: in range' => ['2020-01-02T16:00/2020-01-02T16:00', $timeRange, true];
+        yield 'Empty range contains range: exactly at range end' => ['2020-01-02T18:00/2020-01-02T18:00', $timeRange, false];
+        yield 'Empty range contains range: after range' => ['2020-01-02T20:00/2020-01-02T20:00', $timeRange, false];
+    }
+
     public function testFindIntersection(): void
     {
         self::assertNull($this->interval('2009|2010')->findIntersection($this->interval('2010|2013')));
@@ -590,7 +631,10 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertNull($this->interval('2013|----')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2013')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2010')));
-        self::assertNull($this->interval('2010|----')->findIntersection($this->interval('2010|2010')));
+        self::assertNull($this->interval('2010|2010')->findIntersection($this->interval('2011|2011')));
+
+        $intersection = $this->interval('2010|----')->findIntersection($this->interval('2010|2010'));
+        self::assertTrue($intersection && $this->interval('2010|2010')->isEqualTo($intersection));
 
         $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
         self::assertTrue($intersection && $this->interval('2010|2011')->isEqualTo($intersection));
@@ -847,6 +891,60 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
+     * @dataProvider expand
+     *
+     * @param array<int, string|null> $others
+     */
+    public function testExpand(string $iso, array $others, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateTimeInterval::parse($iso)->expand(
+                ...map($others, static function (?string $timeRange): ?LocalDateTimeInterval {
+                    return null !== $timeRange ? LocalDateTimeInterval::parse($timeRange) : null;
+                })
+            )
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function expand(): iterable
+    {
+        $iso = '2020-01-02T08:00/2020-01-02T12:00';
+
+        // Not actually expanding anything
+        yield 'Empty others yield same range' => [$iso, [], $iso];
+        yield 'Empty others because of null values yield same range' => [$iso, [null], $iso];
+        yield 'Nulls mixed with ranges are skipped' => [$iso, [null, '2020-01-02T10:00/2020-01-02T12:00', null], $iso];
+
+        // Expanding
+        yield 'Expanding start (ends before range, finite)' => [$iso, ['2020-01-02T07:00/2020-01-02T07:30'], '2020-01-02T07:00/2020-01-02T12:00'];
+        yield 'Expanding start (ends before range, infinite)' => [$iso, ['-/2020-01-02T07:30'], '-/2020-01-02T12:00'];
+        yield 'Expanding start (ends in range, finite)' => [$iso, ['2020-01-02T07:00/2020-01-02T09:30'], '2020-01-02T07:00/2020-01-02T12:00'];
+        yield 'Expanding start (ends in range, infinite)' => [$iso, ['-/2020-01-02T09:30'], '-/2020-01-02T12:00'];
+
+        yield 'Expanding end (starts in range, finite)' => [$iso, ['2020-01-02T11:00/2020-01-02T14:30'], '2020-01-02T08:00/2020-01-02T14:30'];
+        yield 'Expanding end (starts in range, infinite)' => [$iso, ['2020-01-02T11:00/-'], '2020-01-02T08:00/-'];
+        yield 'Expanding end (starts after range, finite)' => [$iso, ['2020-01-02T14:30/2020-01-02T19:00'], '2020-01-02T08:00/2020-01-02T19:00'];
+        yield 'Expanding end (starts after range, infinite)' => [$iso, ['2020-01-02T14:30/-'], '2020-01-02T08:00/-'];
+
+        yield 'Expanding both (finite)' => [$iso, ['2020-01-02T07:00/2020-01-02T14:30'], '2020-01-02T07:00/2020-01-02T14:30'];
+        yield 'Expanding both (infinite)' => [$iso, ['-/-'], '-/-'];
+
+        yield 'Expand from multiple ranges' => [
+            $iso,
+            [
+                '2020-01-02T07:00/2020-01-02T07:30',
+                '2020-01-02T11:00/2020-01-02T11:30',
+                '2020-01-02T18:00/2020-01-03T08:00',
+            ],
+            '2020-01-02T07:00/2020-01-03T08:00',
+        ];
+    }
+
+    /**
      * @dataProvider toFullDays
      */
     public function testToFullDays(string $input, string $expected): void
@@ -908,12 +1006,9 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         self::assertSame(
             $expected,
-            map(
-                iterator_to_array(LocalDateTimeInterval::parse($input)->days()),
-                static function (LocalDateTimeInterval $timeRange): string {
-                    return (string) $timeRange;
-                }
-            )
+            map(LocalDateTimeInterval::parse($input)->days(), static function (LocalDate $day): string {
+                return (string) $day;
+            })
         );
     }
 
@@ -925,31 +1020,31 @@ class LocalDateTimeIntervalTest extends TestCase
         yield [
             '2020-01-01T00:00/2020-01-02T00:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
+                '2020-01-01',
             ],
         ];
         yield [
             '2020-01-01T12:00/2020-01-02T12:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
-                '2020-01-02T00:00/2020-01-03T00:00',
+                '2020-01-01',
+                '2020-01-02',
             ],
         ];
         yield [
             '2020-01-01T00:00/2020-01-03T01:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
-                '2020-01-02T00:00/2020-01-03T00:00',
-                '2020-01-03T00:00/2020-01-04T00:00',
+                '2020-01-01',
+                '2020-01-02',
+                '2020-01-03',
             ],
         ];
 
         yield [
             '2020-01-01T00:00/2020-01-04T00:00',
             [
-                '2020-01-01T00:00/2020-01-02T00:00',
-                '2020-01-02T00:00/2020-01-03T00:00',
-                '2020-01-03T00:00/2020-01-04T00:00',
+                '2020-01-01',
+                '2020-01-02',
+                '2020-01-03',
             ],
         ];
     }
