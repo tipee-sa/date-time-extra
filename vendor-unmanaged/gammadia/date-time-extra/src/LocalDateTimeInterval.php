@@ -152,9 +152,7 @@ class LocalDateTimeInterval implements JsonSerializable
         return self::between(
             $this->hasInfiniteStart() ? null : $this->getFiniteStart()->withTime(LocalTime::min()),
             $this->hasInfiniteEnd() ? null : (
-                $this->getFiniteEnd()->getTime()->isEqualTo(LocalTime::min()) &&
-                // This allows to deal with empty ranges
-                !$this->getFiniteEnd()->isEqualTo($this->getFiniteStart())
+                !$this->isEmpty() && $this->getFiniteEnd()->getTime()->isEqualTo(LocalTime::min())
                     ? $this->getFiniteEnd()
                     : $this->getFiniteEnd()->plusDays(1)->withTime(LocalTime::min())
             )
@@ -193,19 +191,19 @@ class LocalDateTimeInterval implements JsonSerializable
     public function getFiniteStart(): LocalDateTime
     {
         if (null === $this->start) {
-            throw new \RuntimeException('This interval has a non finite start.');
+            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
         }
 
         return $this->start;
     }
 
     /**
-     * Yields the start time point if not null.
+     * Yields the end time point if not null.
      */
     public function getFiniteEnd(): LocalDateTime
     {
         if (null === $this->end) {
-            throw new \RuntimeException('This interval has an non finite end.');
+            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
         }
 
         return $this->end;
