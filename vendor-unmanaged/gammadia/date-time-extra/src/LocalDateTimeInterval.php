@@ -184,19 +184,19 @@ class LocalDateTimeInterval
     public function getFiniteStart(): LocalDateTime
     {
         if (null === $this->start) {
-            throw new \RuntimeException('This interval has a non finite start.');
+            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
         }
 
         return $this->start;
     }
 
     /**
-     * Yields the start time point if not null.
+     * Yields the end time point if not null.
      */
     public function getFiniteEnd(): LocalDateTime
     {
         if (null === $this->end) {
-            throw new \RuntimeException('This interval has an non finite end.');
+            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
         }
 
         return $this->end;

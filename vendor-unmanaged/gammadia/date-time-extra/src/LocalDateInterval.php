@@ -629,7 +629,7 @@ class LocalDateInterval
     public function getFiniteEnd(): LocalDate
     {
         if (null === $this->end) {
-            throw new \RuntimeException('This interval has a non finite end.');
+            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
         }
 
         return $this->end;
@@ -638,7 +638,7 @@ class LocalDateInterval
     public function getFiniteStart(): LocalDate
     {
         if (null === $this->start) {
-            throw new \RuntimeException('This interval has a non finite start.');
+            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
         }
 
         return $this->start;
