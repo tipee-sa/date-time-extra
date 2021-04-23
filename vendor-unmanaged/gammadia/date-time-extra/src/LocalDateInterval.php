@@ -79,6 +79,11 @@ class LocalDateInterval implements JsonSerializable
         return self::between($date, $date);
     }
 
+    public static function forever(): self
+    {
+        return self::between(null, null);
+    }
+
     /**
      * Creates an interval that contains (encompasses) every provided intervals
      *
@@ -291,8 +296,8 @@ class LocalDateInterval implements JsonSerializable
     {
         return sprintf(
             '%s/%s',
-            $this->hasInfiniteStart() ? InfinityStyle::SYMBOL : $this->start,
-            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end
+            $this->getStartIso(),
+            $this->getEndIso()
         );
     }
 
@@ -304,6 +309,16 @@ class LocalDateInterval implements JsonSerializable
     public function getEnd(): ?LocalDate
     {
         return $this->end;
+    }
+
+    public function getStartIso(): string
+    {
+        return $this->hasInfiniteStart() ? InfinityStyle::SYMBOL : (string) $this->start;
+    }
+
+    public function getEndIso(): string
+    {
+        return $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : (string) $this->end;
     }
 
     /**
