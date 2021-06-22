@@ -315,9 +315,7 @@ class LocalDateTimeIntervalTest extends TestCase
         $interval = LocalDateTimeInterval::parse($interval);
         $slices = map(
             iterator_to_array($interval->slice($durationOrPeriod)),
-            static function (LocalDateTimeInterval $slice): string {
-                return $slice->toString();
-            }
+            static fn (LocalDateTimeInterval $slice): string => $slice->toString()
         );
         self::assertSame($expected, $slices);
     }
@@ -849,11 +847,9 @@ class LocalDateTimeIntervalTest extends TestCase
     {
         self::assertSame(
             $expected,
-            (string) LocalDateTimeInterval::containerOf(
-                ...map($input, static function (string $timeRange): LocalDateTimeInterval {
-                    return LocalDateTimeInterval::parse($timeRange);
-                })
-            )
+            (string) LocalDateTimeInterval::containerOf(...map($input, static fn (string $timeRange): LocalDateTimeInterval
+                => LocalDateTimeInterval::parse($timeRange)
+            ))
         );
     }
 
@@ -900,9 +896,9 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertSame(
             $expected,
             (string) LocalDateTimeInterval::parse($iso)->expand(
-                ...map($others, static function (?string $timeRange): ?LocalDateTimeInterval {
-                    return null !== $timeRange ? LocalDateTimeInterval::parse($timeRange) : null;
-                })
+                ...map($others, static fn (?string $timeRange): ?LocalDateTimeInterval
+                    => null !== $timeRange ? LocalDateTimeInterval::parse($timeRange) : null
+                )
             )
         );
     }
@@ -1009,12 +1005,9 @@ class LocalDateTimeIntervalTest extends TestCase
      */
     public function testDays(string $input, array $expected): void
     {
-        self::assertSame(
-            $expected,
-            map(LocalDateTimeInterval::parse($input)->days(), static function (LocalDate $day): string {
-                return (string) $day;
-            })
-        );
+        self::assertSame($expected, map(LocalDateTimeInterval::parse($input)->days(), static fn (LocalDate $day): string
+            => (string) $day
+        ));
     }
 
     /**

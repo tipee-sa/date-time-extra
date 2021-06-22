@@ -604,11 +604,10 @@ class LocalDateIntervalTest extends TestCase
         self::assertSame(
             $expected,
             (string) LocalDateInterval::containerOf(
-                ...map($input, static function (string $timeRange) {
-                    return false !== strpos($timeRange, 'T')
+                ...map($input, static fn (string $timeRange) =>
+                    str_contains($timeRange, 'T')
                         ? LocalDateTimeInterval::parse($timeRange)
-                        : LocalDateInterval::parse($timeRange);
-                })
+                        : LocalDateInterval::parse($timeRange))
             )
         );
     }
@@ -656,9 +655,9 @@ class LocalDateIntervalTest extends TestCase
         self::assertSame(
             $expected,
             (string) LocalDateInterval::parse($iso)->expand(
-                ...map($others, static function (?string $timeRange): ?LocalDateInterval {
-                    return null !== $timeRange ? LocalDateInterval::parse($timeRange) : null;
-                })
+                ...map($others, static fn (?string $timeRange): ?LocalDateInterval
+                    => null !== $timeRange ? LocalDateInterval::parse($timeRange) : null
+                )
             )
         );
     }

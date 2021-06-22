@@ -130,12 +130,8 @@ class LocalDateTimeInterval implements JsonSerializable
             return null;
         }
 
-        $starts = map($localDateTimeIntervals, static function (self $localDateTimeInterval): ?LocalDateTime {
-            return $localDateTimeInterval->getStart();
-        });
-        $ends = map($localDateTimeIntervals, static function (self $localDateTimeInterval): ?LocalDateTime {
-            return $localDateTimeInterval->getEnd();
-        });
+        $starts = map($localDateTimeIntervals, static fn (self $localDateTimeInterval): ?LocalDateTime => $localDateTimeInterval->getStart());
+        $ends = map($localDateTimeIntervals, static fn (self $localDateTimeInterval): ?LocalDateTime => $localDateTimeInterval->getEnd());
 
         return self::between(
             contains($starts, null, true) ? null : LocalDateTime::minOf(...$starts),
