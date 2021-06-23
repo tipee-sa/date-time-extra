@@ -14,7 +14,7 @@ class LocalDateIntervalNormalizer implements NormalizerInterface, DenormalizerIn
 {
     /**
      * @param LocalDateInterval $object
-     * @param array<mixed> $context
+     * @param mixed[] $context
      */
     public function normalize($object, ?string $format = null, array $context = []): string
     {
@@ -24,7 +24,7 @@ class LocalDateIntervalNormalizer implements NormalizerInterface, DenormalizerIn
     /**
      * @param mixed $data
      * @param class-string $type
-     * @param array<mixed> $context
+     * @param mixed[] $context
      */
     public function denormalize($data, string $type, ?string $format = null, array $context = []): LocalDateInterval
     {

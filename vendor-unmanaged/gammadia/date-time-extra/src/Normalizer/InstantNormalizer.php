@@ -15,7 +15,7 @@ class InstantNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     /**
      * @param Instant $object
-     * @param array<mixed> $context
+     * @param mixed[] $context
      */
     public function normalize($object, ?string $format = null, array $context = []): string
     {
@@ -25,7 +25,7 @@ class InstantNormalizer implements NormalizerInterface, DenormalizerInterface
     /**
      * @param mixed $data
      * @param class-string $type
-     * @param array<mixed> $context
+     * @param mixed[] $context
      */
     public function denormalize($data, string $type, ?string $format = null, array $context = []): Instant
     {
