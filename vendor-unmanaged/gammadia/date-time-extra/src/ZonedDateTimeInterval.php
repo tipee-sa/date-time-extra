@@ -6,20 +6,24 @@ namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\ZonedDateTime;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @todo Complete this
  */
+#[ORM\Embeddable]
 class ZonedDateTimeInterval
 {
     /**
      * @var ZonedDateTime|null
      */
+    #[ORM\Embedded(class: ZonedDateTime::class)]
     private $start;
 
     /**
      * @var ZonedDateTime|null
      */
+    #[ORM\Embedded(class: ZonedDateTime::class)]
     private $end;
 
     private function __construct(?ZonedDateTime $start, ?ZonedDateTime $end)

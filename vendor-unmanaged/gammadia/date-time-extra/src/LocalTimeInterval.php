@@ -7,10 +7,12 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\Duration;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
+use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Throwable;
 use Webmozart\Assert\Assert;
 
+#[ORM\Embeddable]
 final class LocalTimeInterval implements JsonSerializable
 {
     /**
@@ -21,11 +23,13 @@ final class LocalTimeInterval implements JsonSerializable
     /**
      * @var LocalTime
      */
+    #[ORM\Column(type: 'local_time')]
     private $timepoint;
 
     /**
      * @var Duration
      */
+    #[ORM\Column(type: 'duration')]
     private $duration;
 
     private function __construct(LocalTime $timepoint, Duration $duration)

@@ -6,20 +6,24 @@ namespace Gammadia\DateTimeExtra;
 
 use Brick\DateTime\Duration;
 use Brick\DateTime\Instant;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @todo Complete this
  */
+#[ORM\Embeddable]
 class InstantInterval
 {
     /**
      * @var Instant|null
      */
+    #[ORM\Column(type: 'instant')]
     private $start;
 
     /**
      * @var Instant|null
      */
+    #[ORM\Column(type: 'instant')]
     private $end;
 
     private function __construct(?Instant $start, ?Instant $end)

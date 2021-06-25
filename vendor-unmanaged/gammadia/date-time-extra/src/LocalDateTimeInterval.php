@@ -11,6 +11,7 @@ use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
 use Brick\DateTime\TimeZoneRegion;
+use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\String\ByteString;
 use Traversable;
@@ -19,16 +20,19 @@ use function Gammadia\Collections\Functional\contains;
 use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
+#[ORM\Embeddable]
 class LocalDateTimeInterval implements JsonSerializable
 {
     /**
      * @var LocalDateTime|null
      */
+    #[ORM\Column(type: 'local_datetime')]
     private $start;
 
     /**
      * @var LocalDateTime|null
      */
+    #[ORM\Column(type: 'local_datetime')]
     private $end;
 
     private function __construct(?LocalDateTime $start, ?LocalDateTime $end)
