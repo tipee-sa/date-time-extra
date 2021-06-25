@@ -1,6 +1,0 @@
-<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping" >
-    <embeddable name="Gammadia\DateTimeExtra\LocalDateTimeInterval">
-        <field name="start" type="local_datetime" />
-        <field name="end" type="local_datetime" />
-    </embeddable>
-</doctrine-mapping>
