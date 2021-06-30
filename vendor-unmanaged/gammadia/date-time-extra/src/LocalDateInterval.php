@@ -140,6 +140,14 @@ class LocalDateInterval implements JsonSerializable
         return $expanded;
     }
 
+    public function expandToWeeks(): self
+    {
+        return self::between(
+            $this->getStart()?->minusDays($this->getFiniteStart()->getDayOfWeek()->getValue() - 1),
+            $this->getEnd()?->plusDays(7 - $this->getFiniteEnd()->getDayOfWeek()->getValue()),
+        );
+    }
+
     /**
      * Converts this instance to a timestamp interval with
      * dates from midnight to midnight.
