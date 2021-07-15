@@ -183,7 +183,7 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
     /**
      * Yields a copy of this interval with given start time.
      */
-    public function withStart(LocalDateTime $t): self
+    public function withStart(?LocalDateTime $t): self
     {
         return self::between($t, $this->end);
     }
@@ -191,7 +191,7 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
     /**
      * Yields a copy of this interval with given end time.
      */
-    public function withEnd(LocalDateTime $t): self
+    public function withEnd(?LocalDateTime $t): self
     {
         return self::between($this->start, $t);
     }
