@@ -7,7 +7,6 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
-use Brick\DateTime\TimeZoneRegion;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\String\ByteString;
@@ -17,7 +16,7 @@ use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
 #[ORM\Embeddable]
-class LocalDateInterval implements JsonSerializable
+final class LocalDateInterval implements JsonSerializable
 {
     /**
      * @var LocalDate|null
@@ -150,15 +149,6 @@ class LocalDateInterval implements JsonSerializable
             $this->hasInfiniteStart() ? null : $this->getFiniteStart()->atTime(LocalTime::min()),
             $this->hasInfiniteEnd() ? null : $this->getFiniteEnd()->atTime(LocalTime::min())->plusDays(1)
         );
-    }
-
-    /**
-     * Converts this instance to a moment interval with date boundaries mapped
-     * to the midnight cycle in given time zone.
-     */
-    public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
-    {
-        return $this->toLocalDateTimeInterval()->atTimeZone($timezoneId);
     }
 
     /**

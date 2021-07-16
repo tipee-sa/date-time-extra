@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace Gammadia\DateTimeExtra\Test\Unit;
 
 use Brick\DateTime\LocalDate;
-use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\Period;
-use Brick\DateTime\TimeZoneRegion;
 use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateInterval;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
-use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
 
@@ -66,21 +63,6 @@ class LocalDateIntervalTest extends TestCase
         yield ['2020-10-28/2020-10-29', '2020-10-28T00:00/2020-10-30T00:00'];
         yield ['2020-10-28/2020-11-02', '2020-10-28T00:00/2020-11-03T00:00'];
         yield ['2020-10-28/2024-03-12', '2020-10-28T00:00/2024-03-13T00:00'];
-    }
-
-    public function testAtTimezoneSaoPaulo(): void
-    {
-        $saoPaulo = TimeZoneRegion::of('America/Sao_Paulo');
-
-        $dateRange = LocalDateInterval::parse('2016-10-16/2016-10-17');
-        $ldt1 = LocalDateTime::of(2016, 10, 16);
-        $ldt2 = LocalDateTime::of(2016, 10, 18);
-
-        self::assertTrue(
-            ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))->isEqualTo(
-                $dateRange->atTimeZone($saoPaulo)
-            )
-        );
     }
 
     public function testLengthInDays(): void

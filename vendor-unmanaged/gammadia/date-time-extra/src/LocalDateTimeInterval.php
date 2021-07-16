@@ -10,7 +10,6 @@ use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
-use Brick\DateTime\TimeZoneRegion;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\String\ByteString;
@@ -238,34 +237,6 @@ class LocalDateTimeInterval implements JsonSerializable
     }
 
     /**
-     * Combines this local datetime interval with the timezone offset UTC+00:00 to a global UTC-interval.
-     *
-     * @return InstantInterval global timestamp interval interpreted at offset UTC+00:00
-     */
-    public function atUTC(): InstantInterval
-    {
-        return InstantInterval::between(
-            $this->start ? $this->start->atTimeZone(TimeZoneOffset::utc())->getInstant() : null,
-            $this->end ? $this->end->atTimeZone(TimeZoneOffset::utc())->getInstant() : null
-        );
-    }
-
-    /**
-     * Combines this local timestamp interval with given timezone to a ZonedInterval.
-     *
-     * @param TimeZoneRegion $timezoneId timezone id
-     *
-     * @return ZonedDateTimeInterval zoned datetime interval interpreted in given timezone
-     */
-    public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
-    {
-        return ZonedDateTimeInterval::between(
-            $this->start ? $this->start->atTimeZone($timezoneId) : null,
-            $this->end ? $this->end->atTimeZone($timezoneId) : null
-        );
-    }
-
-    /**
      * Parses the given text as as interval.
      *
      * @param string $text text to be parsed
@@ -362,7 +333,10 @@ class LocalDateTimeInterval implements JsonSerializable
             throw new \RuntimeException('Returning the duration with infinite boundary is not possible.');
         }
 
-        return $this->atUTC()->getDuration();
+        return Duration::between(
+            $this->getFiniteStart()->atTimeZone(TimeZoneOffset::utc())->getInstant(),
+            $this->getFiniteEnd()->atTimeZone(TimeZoneOffset::utc())->getInstant()
+        );
     }
 
     /**

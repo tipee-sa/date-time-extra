@@ -9,12 +9,8 @@ use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\Parser\DateTimeParseException;
 use Brick\DateTime\Period;
-use Brick\DateTime\TimeZoneOffset;
-use Brick\DateTime\TimeZoneRegion;
-use Gammadia\DateTimeExtra\InstantInterval;
 use Gammadia\DateTimeExtra\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
-use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
 
@@ -47,31 +43,6 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertSame(
             '2020-01-01T00:00/2020-01-02T00:00',
             (string) LocalDateTimeInterval::day(LocalDateTime::parse('2020-01-01T12:00:00'))
-        );
-    }
-
-    public function testInUTC(): void
-    {
-        $t1 = LocalDateTime::of(2014, 2, 27, 0, 0);
-        $t2 = LocalDateTime::of(2014, 5, 14, 23, 59, 59);
-
-        $m1 = $t1->atTimeZone(TimeZoneOffset::utc())->getInstant();
-        $m2 = $t2->atTimeZone(TimeZoneOffset::utc())->getInstant();
-
-        self::assertTrue(LocalDateTimeInterval::between($t1, $t2)->atUTC()->isEqualTo(InstantInterval::between($m1, $m2)));
-    }
-
-    public function testInTimezoneSaoPaulo(): void
-    {
-        $saoPaulo = TimeZoneRegion::of('America/Sao_Paulo');
-
-        $ldt1 = LocalDateTime::of(2016, 10, 16, 1, 0);
-        $ldt2 = LocalDateTime::of(2016, 10, 16, 2, 0);
-
-        self::assertTrue(
-            LocalDateTimeInterval::between($ldt1, $ldt2)->atTimeZone($saoPaulo)->isEqualTo(
-                ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))
-            )
         );
     }
 
