@@ -1,6 +1,0 @@
-<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping" >
-    <embeddable name="Gammadia\DateTimeExtra\InstantInterval">
-        <field name="start" type="instant" />
-        <field name="end" type="instant" />
-    </embeddable>
-</doctrine-mapping>
