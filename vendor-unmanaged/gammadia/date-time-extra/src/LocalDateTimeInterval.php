@@ -20,7 +20,7 @@ use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
 #[ORM\Embeddable]
-class LocalDateTimeInterval implements JsonSerializable
+final class LocalDateTimeInterval implements JsonSerializable
 {
     /**
      * @var LocalDateTime|null
