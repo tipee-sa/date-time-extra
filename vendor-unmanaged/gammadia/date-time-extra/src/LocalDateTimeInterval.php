@@ -18,7 +18,7 @@ use function Gammadia\Collections\Functional\contains;
 use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
-class LocalDateTimeInterval implements JsonSerializable
+final class LocalDateTimeInterval implements JsonSerializable
 {
     /**
      * @var LocalDateTime|null
