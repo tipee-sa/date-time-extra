@@ -15,9 +15,6 @@ use Webmozart\Assert\Assert;
 #[ORM\Embeddable]
 final class LocalTimeInterval implements JsonSerializable
 {
-    /**
-     * @var string
-     */
     private const SEPARATOR = '/';
 
     /**

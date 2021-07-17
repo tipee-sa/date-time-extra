@@ -15,9 +15,6 @@ use PHPUnit\Framework\TestCase;
 
 final class LocalTimeIntervalTest extends TestCase
 {
-    /**
-     * @var string
-     */
     private const DATE = '2020-01-02';
 
     /*
