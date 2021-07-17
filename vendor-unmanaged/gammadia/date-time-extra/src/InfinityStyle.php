@@ -9,8 +9,5 @@ namespace Gammadia\DateTimeExtra;
  */
 interface InfinityStyle
 {
-    /**
-     * @var string
-     */
     public const SYMBOL = '-';
 }
