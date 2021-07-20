@@ -8,24 +8,22 @@ use Brick\DateTime\LocalTime;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 
-class LocalTimeType extends Type
+final class LocalTimeType extends Type
 {
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform): string
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
-        return $platform->getTimeTypeDeclarationSQL($fieldDeclaration);
+        return $platform->getTimeTypeDeclarationSQL($column);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function convertToPHPValue($value, AbstractPlatform $platform)
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?LocalTime
     {
-        return LocalTime::parse($value);
+        if ($value) {
+            return LocalTime::parse($value);
+        }
+
+        return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'local_time';

@@ -10,17 +10,14 @@ use Brick\DateTime\Parser\PatternParserBuilder;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 
-class LocalDateTimeType extends Type
+final class LocalDateTimeType extends Type
 {
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform): string
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
-        return $platform->getDateTimeTypeDeclarationSQL($fieldDeclaration);
+        return $platform->getDateTimeTypeDeclarationSQL($column);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function convertToPHPValue($value, AbstractPlatform $platform)
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?LocalDateTime
     {
         if ($value) {
             $parser = (new PatternParserBuilder())
@@ -35,9 +32,6 @@ class LocalDateTimeType extends Type
         return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'local_datetime';

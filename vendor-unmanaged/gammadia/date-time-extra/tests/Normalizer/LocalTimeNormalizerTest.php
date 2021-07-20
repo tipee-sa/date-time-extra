@@ -10,7 +10,7 @@ use Gammadia\DateTimeExtra\Normalizer\LocalTimeNormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
-class LocalTimeNormalizerTest extends TestCase
+final class LocalTimeNormalizerTest extends TestCase
 {
     public function testNormalize(): void
     {
@@ -29,7 +29,7 @@ class LocalTimeNormalizerTest extends TestCase
 
         self::assertTrue($normalizer->supportsDenormalization($data, LocalTime::class));
         self::assertFalse($normalizer->supportsDenormalization($data, LocalDate::class));
-        self::assertTrue(LocalTime::of(10, 15)->isEqualTo($normalizer->denormalize($data, LocalTime::class)));
+        self::assertSame($data, (string) $normalizer->denormalize($data, LocalTime::class));
 
         $this->expectException(NotNormalizableValueException::class);
         $normalizer->denormalize('25:00', LocalTime::class);

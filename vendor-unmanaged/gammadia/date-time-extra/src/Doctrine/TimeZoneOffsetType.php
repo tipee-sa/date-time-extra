@@ -8,24 +8,25 @@ use Brick\DateTime\TimeZoneOffset;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 
-class TimeZoneOffsetType extends Type
+final class TimeZoneOffsetType extends Type
 {
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform): string
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
-        return $platform->getVarcharTypeDeclarationSQL($fieldDeclaration);
+        return $platform->getVarcharTypeDeclarationSQL($column);
     }
 
     /**
-     * @param TimeZoneOffset $value
+     * @param TimeZoneOffset|null $value
      */
-    public function convertToDatabaseValue($value, AbstractPlatform $platform): string
+    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
     {
-        return $value->getId();
+        if ($value) {
+            return $value->getId();
+        }
+
+        return null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'timezone_offset_type';

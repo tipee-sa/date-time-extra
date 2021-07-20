@@ -8,36 +8,25 @@ use Brick\DateTime\Duration;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Doctrine\ORM\Mapping as ORM;
+use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use JsonSerializable;
+use Stringable;
 use Throwable;
 use Webmozart\Assert\Assert;
 
 #[ORM\Embeddable]
-final class LocalTimeInterval implements JsonSerializable
+final class LocalTimeInterval implements JsonSerializable, Stringable
 {
     private const SEPARATOR = '/';
 
-    /**
-     * @var LocalTime
-     */
-    #[ORM\Column(type: 'local_time')]
-    private $timepoint;
+    private function __construct(
+        #[ORM\Column(type: 'local_time')]
+        private LocalTime $timepoint,
 
-    /**
-     * @var Duration
-     */
-    #[ORM\Column(type: 'duration')]
-    private $duration;
-
-    private function __construct(LocalTime $timepoint, Duration $duration)
-    {
-        Assert::true(
-            $duration->isPositiveOrZero(),
-            sprintf('Negative durations are not supported by %s', self::class)
-        );
-
-        $this->timepoint = $timepoint;
-        $this->duration = $duration;
+        #[ORM\Column(type: 'duration')]
+        private Duration $duration,
+    ) {
+        Assert::true($duration->isPositiveOrZero(), sprintf('Negative durations are not supported by %s', self::class));
     }
 
     public function __toString(): string
@@ -70,7 +59,7 @@ final class LocalTimeInterval implements JsonSerializable
     }
 
     /**
-     * @param string $textToParse A LocalTime + optional Duration (12:34/PT2H)
+     * Standard format is ISOs of a LocalTime + an optional Duration (12:34/PT2H)
      */
     public static function parse(string $textToParse): self
     {

@@ -10,23 +10,22 @@ use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class LocalTimeNormalizer implements NormalizerInterface, DenormalizerInterface
+final class LocalTimeNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     /**
      * @param LocalTime $object
      * @param mixed[] $context
      */
-    public function normalize($object, ?string $format = null, array $context = []): string
+    public function normalize(mixed $object, ?string $format = null, array $context = []): string
     {
         return (string) $object;
     }
 
     /**
-     * @param mixed $data
      * @param class-string $type
      * @param mixed[] $context
      */
-    public function denormalize($data, string $type, ?string $format = null, array $context = []): LocalTime
+    public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): LocalTime
     {
         try {
             return LocalTime::parse($data);
@@ -35,19 +34,15 @@ class LocalTimeNormalizer implements NormalizerInterface, DenormalizerInterface
         }
     }
 
-    /**
-     * @param mixed $data
-     */
-    public function supportsNormalization($data, ?string $format = null): bool
+    public function supportsNormalization(mixed $data, ?string $format = null): bool
     {
         return $data instanceof LocalTime;
     }
 
     /**
-     * @param mixed $data
      * @param class-string $type
      */
-    public function supportsDenormalization($data, string $type, ?string $format = null): bool
+    public function supportsDenormalization(mixed $data, string $type, ?string $format = null): bool
     {
         return LocalTime::class === $type;
     }

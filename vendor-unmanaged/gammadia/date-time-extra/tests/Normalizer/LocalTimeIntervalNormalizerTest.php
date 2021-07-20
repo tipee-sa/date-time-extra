@@ -11,7 +11,7 @@ use Gammadia\DateTimeExtra\Normalizer\LocalTimeIntervalNormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
-class LocalTimeIntervalNormalizerTest extends TestCase
+final class LocalTimeIntervalNormalizerTest extends TestCase
 {
     public function testNormalize(): void
     {
@@ -26,12 +26,11 @@ class LocalTimeIntervalNormalizerTest extends TestCase
     public function testDenormalize(): void
     {
         $normalizer = new LocalTimeIntervalNormalizer();
-        $iso = '12:34/PT2H';
-        $localTimeInterval = LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2));
+        $data = '12:34/PT2H';
 
-        self::assertTrue($normalizer->supportsDenormalization($iso, LocalTimeInterval::class));
-        self::assertFalse($normalizer->supportsDenormalization($iso, LocalTime::class));
-        self::assertSame((string) $localTimeInterval, (string) $normalizer->denormalize($iso, LocalTimeInterval::class));
+        self::assertTrue($normalizer->supportsDenormalization($data, LocalTimeInterval::class));
+        self::assertFalse($normalizer->supportsDenormalization($data, LocalTime::class));
+        self::assertSame($data, (string) $normalizer->denormalize($data, LocalTimeInterval::class));
 
         $this->expectException(NotNormalizableValueException::class);
         $normalizer->denormalize('08:00/16:00', LocalTimeInterval::class);

@@ -10,7 +10,7 @@ use Gammadia\DateTimeExtra\Normalizer\InstantNormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
-class InstantNormalizerTest extends TestCase
+final class InstantNormalizerTest extends TestCase
 {
     public function testNormalize(): void
     {
@@ -29,7 +29,7 @@ class InstantNormalizerTest extends TestCase
 
         self::assertTrue($normalizer->supportsDenormalization($data, Instant::class));
         self::assertFalse($normalizer->supportsDenormalization($data, LocalTime::class));
-        self::assertTrue(Instant::of(90)->isEqualTo($normalizer->denormalize($data, Instant::class)));
+        self::assertSame((string) Instant::of(90), (string) $normalizer->denormalize($data, Instant::class));
 
         $this->expectException(NotNormalizableValueException::class);
         $normalizer->denormalize('-10', Instant::class);

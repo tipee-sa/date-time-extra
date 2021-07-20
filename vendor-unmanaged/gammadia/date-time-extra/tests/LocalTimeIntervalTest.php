@@ -7,7 +7,7 @@ namespace Gammadia\DateTimeExtra\Test\Unit;
 use Brick\DateTime\Duration;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
-use Gammadia\DateTimeExtra\IntervalParseException;
+use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use Gammadia\DateTimeExtra\LocalTimeInterval;
 use InvalidArgumentException;

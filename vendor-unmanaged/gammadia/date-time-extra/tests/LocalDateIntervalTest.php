@@ -6,41 +6,44 @@ namespace Gammadia\DateTimeExtra\Test\Unit;
 
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\Period;
-use Gammadia\DateTimeExtra\IntervalParseException;
+use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateInterval;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
 
-class LocalDateIntervalTest extends TestCase
+final class LocalDateIntervalTest extends TestCase
 {
+    public function testConstructThrowsInvalidArgumentExceptionInversedRanges(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Start after end: 2021-01-02 / 2021-01-01');
+
+        LocalDateInterval::between(LocalDate::parse('2021-01-02'), LocalDate::parse('2021-01-01'));
+    }
+
     public function testBetween(): void
     {
-        $start = LocalDate::of(2010, 1, 1);
-        $end = LocalDate::of(2011, 1, 1);
-
-        self::assertTrue($this->interval('2010|2011')->isEqualTo(LocalDateInterval::between($start, $end)));
+        self::assertSame(
+            '2010-01-01/2011-01-01',
+            (string) LocalDateInterval::between(LocalDate::parse('2010-01-01'), LocalDate::parse('2011-01-01'))
+        );
     }
 
     public function testSince(): void
     {
-        $start = LocalDate::of(2010, 1, 1);
-
-        self::assertTrue($this->interval('2010|----')->isEqualTo(LocalDateInterval::since($start)));
+        self::assertSame('2010-01-01/-', (string) LocalDateInterval::since(LocalDate::parse('2010-01-01')));
     }
 
     public function testUntil(): void
     {
-        $end = LocalDate::of(2011, 1, 1);
-
-        self::assertTrue($this->interval('----|2011')->isEqualTo(LocalDateInterval::until($end)));
+        self::assertSame('-/2011-01-01', (string) LocalDateInterval::until(LocalDate::parse('2011-01-01')));
     }
 
     public function testAtomic(): void
     {
-        $date = LocalDate::of(2009, 1, 1);
-
-        self::assertTrue($this->interval('2009|2009')->isEqualTo(LocalDateInterval::atomic($date)));
+        self::assertSame('2009-01-01/2009-01-01', (string) LocalDateInterval::atomic(LocalDate::parse('2009-01-01')));
     }
 
     /**
@@ -79,104 +82,71 @@ class LocalDateIntervalTest extends TestCase
 
     public function testGetPeriod(): void
     {
-        $interval =
-            LocalDateInterval::between(
-                LocalDate::of(2014, 1, 1),
-                LocalDate::of(2014, 1, 30)
-            );
-
-        self::assertTrue(Period::parse('P30D')->isEqualTo($interval->getPeriod()));
+        self::assertTrue(Period::parse('P30D')->isEqualTo(LocalDateInterval::parse('2014-01-01/2014-01-30')->getPeriod()));
     }
 
-    public function testMove(): void
+    /**
+     * @dataProvider move
+     */
+    public function testMove(string $iso, string $period, string $expected): void
     {
-        self::assertTrue(
-            LocalDateInterval::parse('2012-01-02/2012-01-03')->isEqualTo(
-                LocalDateInterval::parse('2012-01-01/2012-01-02')->move(Period::parse('P1D'))
-            )
-        );
+        self::assertSame($expected, (string) LocalDateInterval::parse($iso)->move(Period::parse($period)));
+    }
 
-        self::assertTrue(
-            LocalDateInterval::parse('2012-01-09/2012-01-10')->isEqualTo(
-                LocalDateInterval::parse('2012-01-01/2012-01-02')->move(Period::parse('P1W1D'))
-            )
-        );
+    /**
+     * @return iterable<mixed>
+     */
+    public function move(): iterable
+    {
+        yield ['2012-01-01/2012-01-02', 'P1D', '2012-01-02/2012-01-03'];
+        yield ['2012-01-01/2012-01-02', 'P1W1D', '2012-01-09/2012-01-10'];
+        yield ['2012-01-01/2012-01-02', 'P1M1W1D', '2012-02-09/2012-02-10'];
+        yield ['2012-02-09/2012-02-10', '-P1M1W1D', '2012-01-01/2012-01-02'];
 
-        self::assertTrue(
-            LocalDateInterval::parse('2012-02-09/2012-02-10')->isEqualTo(
-                LocalDateInterval::parse('2012-01-01/2012-01-02')->move(Period::parse('P1M1W1D'))
-            )
-        );
-
-        self::assertTrue(
-            LocalDateInterval::parse('2012-01-01/2012-01-02')->isEqualTo(
-                LocalDateInterval::parse('2012-02-09/2012-02-10')->move(Period::parse('-P1M1W1D'))
-            )
-        );
-
-        //Leap year
-        self::assertTrue(
-            LocalDateInterval::parse('2017-02-28/2017-06-01')->isEqualTo(
-                LocalDateInterval::parse('2016-02-29/2016-06-01')->move(Period::parse('P1Y'))
-            )
-        );
-
-        self::assertTrue(
-            LocalDateInterval::parse('2016-02-28/2016-06-01')->isEqualTo(
-                LocalDateInterval::parse('2017-02-28/2017-06-01')->move(Period::parse('-P1Y'))
-            )
-        );
-
-        self::assertTrue(
-            LocalDateInterval::parse('2015-02-28/2015-06-01')->isEqualTo(
-                LocalDateInterval::parse('2016-02-29/2016-06-01')->move(Period::parse('-P1Y'))
-            )
-        );
+        // Leap year
+        yield ['2016-02-29/2016-06-01', 'P1Y', '2017-02-28/2017-06-01'];
+        yield ['2017-02-28/2017-06-01', '-P1Y', '2016-02-28/2016-06-01'];
+        yield ['2016-02-29/2016-06-01', '-P1Y', '2015-02-28/2015-06-01'];
     }
 
     /**
      * @dataProvider iterateDailyProvider
      */
-    public function testIterateDaily(int $expectedCount, LocalDate $start, LocalDate $end): void
+    public function testIterateDaily(int $expectedCount, string $startIso, string $endIso): void
     {
         self::assertCount(
             $expectedCount,
-            iterator_to_array(
-                LocalDateInterval::iterateDaily($start, $end)
-            )
+            iterator_to_array(LocalDateInterval::iterateDaily(LocalDate::parse($startIso), LocalDate::parse($endIso)))
         );
     }
 
     /**
-     * @return iterable<array<mixed>>
+     * @return iterable<mixed>
      */
     public function iterateDailyProvider(): iterable
     {
-        yield [367, LocalDate::of(2012, 1, 1), LocalDate::of(2013, 1, 1)];
-        yield [366, LocalDate::of(2010, 1, 1), LocalDate::of(2011, 1, 1)];
-        yield [32, LocalDate::of(2010, 1, 1), LocalDate::of(2010, 2, 1)];
-        yield [31, LocalDate::of(2010, 4, 1), LocalDate::of(2010, 5, 1)];
-        yield [7, LocalDate::of(2010, 1, 1), LocalDate::of(2010, 1, 7)];
-        yield [2, LocalDate::of(2010, 1, 1), LocalDate::of(2010, 1, 2)];
+        yield [367, '2012-01-01', '2013-01-01'];
+        yield [366, '2010-01-01', '2011-01-01'];
+        yield [32, '2010-01-01', '2010-02-01'];
+        yield [31, '2010-04-01', '2010-05-01'];
+        yield [7, '2010-01-01', '2010-01-07'];
+        yield [2, '2010-01-01', '2010-01-02'];
+        yield [1, '2010-01-01', '2010-01-01'];
     }
 
     /**
      * @dataProvider iterateProvider
      */
-    public function testIterate(int $expectedCount, string $strPeriod): void
+    public function testIterate(int $expected, string $strPeriod): void
     {
         self::assertCount(
-            $expectedCount,
-            iterator_to_array(
-                $this->interval('2010|2011')->iterate(
-                    Period::parse($strPeriod)
-                )
-            )
+            $expected,
+            iterator_to_array(LocalDateInterval::parse('2010-01-01/2011-01-01')->iterate(Period::parse($strPeriod)))
         );
     }
 
     /**
-     * @return iterable<array<mixed>>
+     * @return iterable<mixed>
      */
     public function iterateProvider(): iterable
     {
@@ -192,20 +162,8 @@ class LocalDateIntervalTest extends TestCase
 
     public function testParseLocalDateAndPeriod(): void
     {
-        $start = LocalDate::of(2012, 4, 1);
-        $end = LocalDate::of(2012, 4, 5);
-        $expected = LocalDateInterval::between($start, $end);
-
-        self::assertTrue(LocalDateInterval::parse('2012-04-01/P4D')->isEqualTo($expected));
-    }
-
-    public function testParsePeriodAndLocalDate(): void
-    {
-        $start = LocalDate::of(2012, 4, 1);
-        $end = LocalDate::of(2012, 4, 5);
-        $expected = LocalDateInterval::between($start, $end);
-
-        self::assertTrue(LocalDateInterval::parse('P4D/2012-04-05')->isEqualTo($expected));
+        self::assertSame('2012-04-01/2012-04-05', (string) LocalDateInterval::parse('2012-04-01/P4D'));
+        self::assertSame('2012-04-01/2012-04-05', (string) LocalDateInterval::parse('P4D/2012-04-05'));
     }
 
     /**
@@ -219,77 +177,57 @@ class LocalDateIntervalTest extends TestCase
     }
 
     /**
-     * @return string[][]
+     * @return iterable<mixed>
      */
-    public function providerParseInvalidIntervalsThrowsIntervalParseException(): array
+    public function providerParseInvalidIntervalsThrowsIntervalParseException(): iterable
     {
-        return [
-            ['P4D/P2D'],
-            ['-/P2D'],
-            ['P4D/-'],
-        ];
-    }
-
-    public function testParseAlways(): void
-    {
-        self::assertTrue(LocalDateInterval::parse('-/-')->isEqualTo(LocalDateInterval::between(null, null)));
+        yield ['P4D/P2D'];
+        yield ['-/P2D'];
+        yield ['P4D/-'];
     }
 
     public function testParseInfinity(): void
     {
-        $tsp = LocalDate::of(2015, 1, 1);
+        $date = LocalDate::parse('2015-01-01');
 
-        self::assertTrue(
-            LocalDateInterval::parse('2015-01-01/-')->isEqualTo(LocalDateInterval::since($tsp))
-        );
-
-        self::assertTrue(
-            LocalDateInterval::parse('-/2015-01-01')->isEqualTo(LocalDateInterval::until($tsp))
-        );
+        self::assertSame('2015-01-01/-', (string) LocalDateInterval::since($date));
+        self::assertSame('-/2015-01-01', (string) LocalDateInterval::until($date));
+        self::assertSame('-/-', (string) LocalDateInterval::forever());
     }
 
     public function testToString(): void
     {
-        $start = LocalDate::of(2020, 6, 29);
-        $end = LocalDate::of(2020, 6, 30);
+        $iso = '2020-06-29/2020-06-30';
+        $interval = LocalDateInterval::parse($iso);
 
-        self::assertSame('2020-06-29/2020-06-30', LocalDateInterval::between($start, $end)->toString());
-        self::assertSame('2009-01-01/-', $this->interval('2009|----')->toString());
-        self::assertSame('-/2010-01-01', $this->interval('----|2010')->toString());
+        self::assertSame($iso, (string) $interval);
+        self::assertSame($iso, $interval->toString());
     }
 
     public function testGetStart(): void
     {
-        $start = LocalDate::of(2020, 6, 29);
-        $end = LocalDate::of(2020, 6, 30);
-
-        self::assertSame($start, LocalDateInterval::between($start, $end)->getStart());
+        self::assertSame('2020-06-29', (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->getStart());
     }
 
     public function testGetEnd(): void
     {
-        $start = LocalDate::of(2020, 6, 29);
-        $end = LocalDate::of(2020, 6, 30);
-
-        self::assertSame($end, LocalDateInterval::between($start, $end)->getEnd());
+        self::assertSame('2020-06-30', (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->getEnd());
     }
 
     public function testWithStart(): void
     {
-        $start = LocalDate::of(2020, 6, 29);
-        $end = LocalDate::of(2020, 6, 30);
-        $newStart = LocalDate::of(2020, 6, 28);
-
-        self::assertTrue(LocalDateInterval::between($newStart, $end)->isEqualTo(LocalDateInterval::between($start, $end)->withStart($newStart)));
+        self::assertSame(
+            '2020-06-28/2020-06-30',
+            (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->withStart(LocalDate::parse('2020-06-28'))
+        );
     }
 
     public function testWithEnd(): void
     {
-        $start = LocalDate::of(2020, 6, 29);
-        $end = LocalDate::of(2020, 6, 30);
-        $newEnd = LocalDate::of(2020, 7, 1);
-
-        self::assertTrue(LocalDateInterval::between($start, $newEnd)->isEqualTo(LocalDateInterval::between($start, $end)->withEnd($newEnd)));
+        self::assertSame(
+            '2020-06-29/2020-07-01',
+            (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->withEnd(LocalDate::parse('2020-07-01'))
+        );
     }
 
     public function testIsBefore(): void
@@ -551,29 +489,14 @@ class LocalDateIntervalTest extends TestCase
         self::assertNull($this->interval('2013|----')->findIntersection($this->interval('2010|2013', '-P1D')));
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2013', '+P1D')));
 
-        $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection && $this->interval('2010|2011')->isEqualTo($intersection));
-
-        $intersection2 = $this->interval('2010|2011')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection2 && $this->interval('2010|2011')->isEqualTo($intersection2));
-
-        $intersection3 = $this->interval('2011|2012')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection3 && $this->interval('2011|2012')->isEqualTo($intersection3));
-
-        $intersection4 = $this->interval('2011|2014')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection4 && $this->interval('2011|2013')->isEqualTo($intersection4));
-
-        $intersection5 = $this->interval('----|2012')->findIntersection($this->interval('----|2013'));
-        self::assertTrue($intersection5 && $this->interval('----|2012')->isEqualTo($intersection5));
-
-        $intersection6 = $this->interval('----|2012')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection6 && $this->interval('2010|2012')->isEqualTo($intersection6));
-
-        $intersection7 = $this->interval('2009|----')->findIntersection($this->interval('2010|----'));
-        self::assertTrue($intersection7 && $this->interval('2010|----')->isEqualTo($intersection7));
-
-        $intersection5 = $this->interval('2009|2012')->findIntersection($this->interval('2010|----'));
-        self::assertTrue($intersection5 && $this->interval('2010|2012')->isEqualTo($intersection5));
+        self::assertSame('2010-01-01/2011-01-01', (string) $this->interval('2009|2011')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2010-01-01/2011-01-01', (string) $this->interval('2010|2011')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2011-01-01/2012-01-01', (string) $this->interval('2011|2012')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2011-01-01/2013-01-01', (string) $this->interval('2011|2014')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2010-01-01/2012-01-01', (string) $this->interval('----|2012')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2010-01-01/2012-01-01', (string) $this->interval('2009|2012')->findIntersection($this->interval('2010|----')));
+        self::assertSame('-/2012-01-01', (string) $this->interval('----|2012')->findIntersection($this->interval('----|2013')));
+        self::assertSame('2010-01-01/-', (string) $this->interval('2009|----')->findIntersection($this->interval('2010|----')));
     }
 
     /**
