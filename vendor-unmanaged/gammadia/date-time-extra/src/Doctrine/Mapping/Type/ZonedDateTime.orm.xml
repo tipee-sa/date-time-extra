@@ -1,0 +1,6 @@
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping" >
+    <embeddable name="Brick\DateTime\ZonedDateTime">
+        <field name="timeZone" type="timezone_offset_type" column="timezone"/>
+        <field name="instant" type="instant" />
+    </embeddable>
+</doctrine-mapping>
