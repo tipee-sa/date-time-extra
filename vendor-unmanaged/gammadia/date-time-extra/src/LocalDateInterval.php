@@ -7,38 +7,28 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
-use Brick\DateTime\TimeZoneRegion;
 use Doctrine\ORM\Mapping as ORM;
+use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use JsonSerializable;
-use Symfony\Component\String\ByteString;
+use RuntimeException;
+use Stringable;
+use Traversable;
 use Webmozart\Assert\Assert;
 use function Gammadia\Collections\Functional\contains;
 use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
 #[ORM\Embeddable]
-class LocalDateInterval implements JsonSerializable
+final class LocalDateInterval implements JsonSerializable, Stringable
 {
-    /**
-     * @var LocalDate|null
-     */
-    #[ORM\Column(type: 'local_date')]
-    private $start;
+    private function __construct(
+        #[ORM\Column(type: 'local_date')]
+        private ?LocalDate $start,
 
-    /**
-     * @var LocalDate|null
-     */
-    #[ORM\Column(type: 'local_date')]
-    private $end;
-
-    private function __construct(?LocalDate $start, ?LocalDate $end)
-    {
-        if ($start && $end && $start->isAfter($end)) {
-            throw new \InvalidArgumentException("Start after end: ${start} / ${end}");
-        }
-
-        $this->start = $start;
-        $this->end = $end;
+        #[ORM\Column(type: 'local_date')]
+        private ?LocalDate $end,
+    ) {
+        Assert::false($start && $end && $start->isAfter($end), sprintf('Start after end: %s / %s', $start, $end));
     }
 
     public function __toString(): string
@@ -91,11 +81,9 @@ class LocalDateInterval implements JsonSerializable
     /**
      * Creates an interval that contains (encompasses) every provided intervals
      *
-     * @param self|LocalDateTimeInterval ...$localDateIntervals
-     *
-     * @return self|null new timestamp interval or null if the input is empty
+     * Returns new timestamp interval or null if the input is empty
      */
-    public static function containerOf(...$localDateIntervals): ?self
+    public static function containerOf(self|LocalDateTimeInterval ...$localDateIntervals): ?self
     {
         if (empty($localDateIntervals)) {
             return null;
@@ -124,9 +112,9 @@ class LocalDateInterval implements JsonSerializable
     }
 
     /**
-     * @param self|LocalDateTimeInterval|null ...$others Null can come from the result of {@see containerOf()}
+     * Null can come as input from the result of {@see containerOf()}
      */
-    public function expand(...$others): self
+    public function expand(self|LocalDateTimeInterval|null ...$others): self
     {
         $others = filter($others);
         if (empty($others)) {
@@ -161,21 +149,12 @@ class LocalDateInterval implements JsonSerializable
     }
 
     /**
-     * Converts this instance to a moment interval with date boundaries mapped
-     * to the midnight cycle in given time zone.
-     */
-    public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
-    {
-        return $this->toLocalDateTimeInterval()->atTimeZone($timezoneId);
-    }
-
-    /**
      * Yields the length of this interval in days.
      */
     public function getLengthInDays(): int
     {
         if (!$this->isFinite()) {
-            throw new \RuntimeException('An infinite interval has no finite duration.');
+            throw new RuntimeException('An infinite interval has no finite duration.');
         }
 
         return $this->getFiniteStart()->daysUntil($this->getFiniteEnd()) + 1;
@@ -187,7 +166,7 @@ class LocalDateInterval implements JsonSerializable
     public function getPeriod(): Period
     {
         if (!$this->isFinite()) {
-            throw new \RuntimeException('An infinite interval has no finite duration.');
+            throw new RuntimeException('An infinite interval has no finite duration.');
         }
 
         return Period::between($this->getFiniteStart(), $this->getFiniteEnd()->plusDays(1));
@@ -207,9 +186,9 @@ class LocalDateInterval implements JsonSerializable
     /**
      * Obtains a stream iterating over every calendar date between given interval boundaries.
      *
-     * @return \Traversable<LocalDate>
+     * @return Traversable<LocalDate>
      */
-    public static function iterateDaily(LocalDate $start, LocalDate $end): \Traversable
+    public static function iterateDaily(LocalDate $start, LocalDate $end): Traversable
     {
         $interval = self::between($start, $end);
 
@@ -220,12 +199,12 @@ class LocalDateInterval implements JsonSerializable
      * Obtains a stream iterating over every calendar date which is the result of addition of given duration
      * to start until the end of this interval is reached.
      *
-     * @return \Traversable<LocalDate>
+     * @return Traversable<LocalDate>
      */
-    public function iterate(Period $period): \Traversable
+    public function iterate(Period $period): Traversable
     {
         if (!$this->isFinite()) {
-            throw new \RuntimeException('Iterate is not supported for infinite interval.');
+            throw new RuntimeException('Iterate is not supported for infinite interval.');
         }
 
         for ($start = $this->getFiniteStart();
@@ -251,22 +230,17 @@ class LocalDateInterval implements JsonSerializable
     {
         [$startStr, $endStr] = explode('/', trim($text), 2);
 
-        $startStr = new ByteString($startStr);
-        $endStr = new ByteString($endStr);
+        $startsWithPeriod = str_starts_with($startStr, 'P');
+        $startsWithInfinity = InfinityStyle::SYMBOL === $startStr;
 
-        $startsWithPeriod = $startStr->startsWith('P');
-        $startsWithInfinity = $startStr->equalsTo(InfinityStyle::SYMBOL);
-
-        $endsWithPeriod = $endStr->startsWith('P');
-        $endsWithInfinity = $endStr->equalsTo(InfinityStyle::SYMBOL);
+        $endsWithPeriod = str_starts_with($endStr, 'P');
+        $endsWithInfinity = InfinityStyle::SYMBOL === $endStr;
 
         if ($startsWithPeriod && $endsWithPeriod) {
             throw IntervalParseException::uniqueDuration($text);
         }
 
-        if (($startsWithPeriod && $endsWithInfinity) ||
-            ($startsWithInfinity && $endsWithPeriod)
-        ) {
+        if (($startsWithPeriod && $endsWithInfinity) || ($startsWithInfinity && $endsWithPeriod)) {
             throw IntervalParseException::durationIncompatibleWithInfinity($text);
         }
 
@@ -274,12 +248,12 @@ class LocalDateInterval implements JsonSerializable
         if ($startsWithInfinity) {
             $ld1 = null;
         } elseif ($startsWithPeriod) {
-            $ld2 = LocalDate::parse($endStr->toString());
-            $ld1 = $ld2->minusPeriod(Period::parse($startStr->toString()));
+            $ld2 = LocalDate::parse($endStr);
+            $ld1 = $ld2->minusPeriod(Period::parse($startStr));
 
             return self::between($ld1, $ld2);
         } else {
-            $ld1 = LocalDate::parse($startStr->toString());
+            $ld1 = LocalDate::parse($startStr);
         }
 
         //END
@@ -287,11 +261,11 @@ class LocalDateInterval implements JsonSerializable
             $ld2 = null;
         } elseif ($endsWithPeriod) {
             if (null === $ld1) {
-                throw new \RuntimeException('Cannot process end period without start.');
+                throw new RuntimeException('Cannot process end period without start.');
             }
-            $ld2 = $ld1->plusPeriod(Period::parse($endStr->toString()));
+            $ld2 = $ld1->plusPeriod(Period::parse($endStr));
         } else {
-            $ld2 = LocalDate::parse($endStr->toString());
+            $ld2 = LocalDate::parse($endStr);
         }
 
         return self::between($ld1, $ld2);
@@ -419,7 +393,8 @@ class LocalDateInterval implements JsonSerializable
         }
 
         if ($other->getFiniteStart()->isAfterOrEqualTo($this->getFiniteStart()) &&
-            $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())) {
+            $other->getFiniteEnd()->isBeforeOrEqualTo($this->getFiniteEnd())
+        ) {
             return true;
         }
 
@@ -433,14 +408,13 @@ class LocalDateInterval implements JsonSerializable
     public function isEqualTo(self $other): bool
     {
         if ($this->hasInfiniteStart() !== $other->hasInfiniteStart() ||
-            $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()) {
+            $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()
+        ) {
             return false;
         }
 
-        return
-            ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart())) &&
-            ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()))
-        ;
+        return ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart()))
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()));
     }
 
     /**
@@ -492,12 +466,10 @@ class LocalDateInterval implements JsonSerializable
      */
     public function overlaps(self $other): bool
     {
-        return
-            !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
-            ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
-            ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBeforeOrEqualTo($other->getFiniteEnd())) &&
-            $this->getFiniteEnd()->isAfterOrEqualTo($other->getFiniteStart())
-        ;
+        return !($this->hasInfiniteEnd() || $other->hasInfiniteStart())
+            && ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart()))
+            && ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBeforeOrEqualTo($other->getFiniteEnd()))
+            && $this->getFiniteEnd()->isAfterOrEqualTo($other->getFiniteStart());
     }
 
     public function overlappedBy(self $other): bool
@@ -513,7 +485,8 @@ class LocalDateInterval implements JsonSerializable
     public function finishes(self $other): bool
     {
         if ((null === $this->end && null !== $other->end) ||
-            (null !== $this->end && null === $other->end)) {
+            (null !== $this->end && null === $other->end)
+        ) {
             return false;
         }
 
@@ -545,7 +518,8 @@ class LocalDateInterval implements JsonSerializable
     public function starts(self $other): bool
     {
         if ((null === $this->start && null !== $other->start) ||
-            (null !== $this->start && null === $other->start)) {
+            (null !== $this->start && null === $other->start)
+        ) {
             return false;
         }
 
@@ -615,16 +589,8 @@ class LocalDateInterval implements JsonSerializable
      */
     public function intersects(self $other): bool
     {
-        return
-            (
-                $this->hasInfiniteStart() ||
-                $other->hasInfiniteEnd() ||
-                $this->getFiniteStart()->isBeforeOrEqualTo($other->getFiniteEnd())) &&
-            (
-                $this->hasInfiniteEnd() ||
-                $other->hasInfiniteStart() ||
-                $this->getFiniteEnd()->isAfterOrEqualTo($other->getFiniteStart())
-            );
+        return ($this->hasInfiniteStart() || $other->hasInfiniteEnd() || $this->getFiniteStart()->isBeforeOrEqualTo($other->getFiniteEnd()))
+            && ($this->hasInfiniteEnd() || $other->hasInfiniteStart() || $this->getFiniteEnd()->isAfterOrEqualTo($other->getFiniteStart()));
     }
 
     /**
@@ -634,13 +600,17 @@ class LocalDateInterval implements JsonSerializable
     {
         if ($this->intersects($other)) {
             if ($this->hasInfiniteStart() || $other->hasInfiniteStart()) {
-                $start = $this->hasInfiniteStart() ? ($other->hasInfiniteStart() ? null : $other->getFiniteStart()) : $this->getFiniteStart();
+                $start = $this->hasInfiniteStart()
+                    ? ($other->hasInfiniteStart() ? null : $other->getFiniteStart())
+                    : $this->getFiniteStart();
             } else {
                 $start = LocalDate::maxOf($this->getFiniteStart(), $other->getFiniteStart());
             }
 
             if ($this->hasInfiniteEnd() || $other->hasInfiniteEnd()) {
-                $end = $this->hasInfiniteEnd() ? ($other->hasInfiniteEnd() ? null : $other->getFiniteEnd()) : $this->getFiniteEnd();
+                $end = $this->hasInfiniteEnd()
+                    ? ($other->hasInfiniteEnd() ? null : $other->getFiniteEnd())
+                    : $this->getFiniteEnd();
             } else {
                 $end = LocalDate::minOf($this->getFiniteEnd(), $other->getFiniteEnd());
             }
@@ -677,7 +647,7 @@ class LocalDateInterval implements JsonSerializable
     public function getFiniteEnd(): LocalDate
     {
         if (null === $this->end) {
-            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
+            throw new RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
         }
 
         return $this->end;
@@ -686,7 +656,7 @@ class LocalDateInterval implements JsonSerializable
     public function getFiniteStart(): LocalDate
     {
         if (null === $this->start) {
-            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
+            throw new RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
         }
 
         return $this->start;

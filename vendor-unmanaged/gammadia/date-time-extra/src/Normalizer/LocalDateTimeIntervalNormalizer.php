@@ -10,23 +10,22 @@ use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class LocalDateTimeIntervalNormalizer implements NormalizerInterface, DenormalizerInterface
+final class LocalDateTimeIntervalNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     /**
      * @param LocalDateTimeInterval $object
      * @param mixed[] $context
      */
-    public function normalize($object, ?string $format = null, array $context = []): string
+    public function normalize(mixed $object, ?string $format = null, array $context = []): string
     {
         return $object->toString();
     }
 
     /**
-     * @param mixed $data
      * @param class-string $type
      * @param mixed[] $context
      */
-    public function denormalize($data, string $type, ?string $format = null, array $context = []): LocalDateTimeInterval
+    public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): LocalDateTimeInterval
     {
         try {
             return LocalDateTimeInterval::parse($data);
@@ -35,19 +34,15 @@ class LocalDateTimeIntervalNormalizer implements NormalizerInterface, Denormaliz
         }
     }
 
-    /**
-     * @param mixed $data
-     */
-    public function supportsNormalization($data, ?string $format = null): bool
+    public function supportsNormalization(mixed $data, ?string $format = null): bool
     {
         return $data instanceof LocalDateTimeInterval;
     }
 
     /**
-     * @param mixed $data
      * @param class-string $type
      */
-    public function supportsDenormalization($data, string $type, ?string $format = null): bool
+    public function supportsDenormalization(mixed $data, string $type, ?string $format = null): bool
     {
         return LocalDateTimeInterval::class === $type;
     }

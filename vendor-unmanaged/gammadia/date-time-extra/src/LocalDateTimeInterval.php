@@ -10,10 +10,11 @@ use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\TimeZoneOffset;
-use Brick\DateTime\TimeZoneRegion;
 use Doctrine\ORM\Mapping as ORM;
+use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use JsonSerializable;
-use Symfony\Component\String\ByteString;
+use RuntimeException;
+use Stringable;
 use Traversable;
 use Webmozart\Assert\Assert;
 use function Gammadia\Collections\Functional\contains;
@@ -21,28 +22,16 @@ use function Gammadia\Collections\Functional\filter;
 use function Gammadia\Collections\Functional\map;
 
 #[ORM\Embeddable]
-class LocalDateTimeInterval implements JsonSerializable
+final class LocalDateTimeInterval implements JsonSerializable, Stringable
 {
-    /**
-     * @var LocalDateTime|null
-     */
-    #[ORM\Column(type: 'local_datetime')]
-    private $start;
+    private function __construct(
+        #[ORM\Column(type: 'local_datetime')]
+        private ?LocalDateTime $start,
 
-    /**
-     * @var LocalDateTime|null
-     */
-    #[ORM\Column(type: 'local_datetime')]
-    private $end;
-
-    private function __construct(?LocalDateTime $start, ?LocalDateTime $end)
-    {
-        if ($start && $end && $start->isAfter($end)) {
-            throw new \InvalidArgumentException("Start after end: ${start} / ${end}");
-        }
-
-        $this->start = $start;
-        $this->end = $end;
+        #[ORM\Column(type: 'local_datetime')]
+        private ?LocalDateTime $end,
+    ) {
+        Assert::false($start && $end && $start->isAfter($end), sprintf('Start after end: %s / %s', $start, $end));
     }
 
     public function __toString(): string
@@ -56,12 +45,7 @@ class LocalDateTimeInterval implements JsonSerializable
     }
 
     /**
-     * Creates a finite half-open interval between given time points.
-     *
-     * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
-     * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
-     *
-     * @return self A LocalDateTimeInterval interval
+     * Creates a finite half-open interval between given time points (inclusive start, exclusive end).
      */
     public static function between(?LocalDateTime $start, ?LocalDateTime $end): self
     {
@@ -74,11 +58,7 @@ class LocalDateTimeInterval implements JsonSerializable
     }
 
     /**
-     * Creates an infinite half-open interval since given start.
-     *
-     * @param LocalDateTime $start the local datetime of lower boundary (inclusive)
-     *
-     * @return self new local datetime interval
+     * Creates an infinite half-open interval since given start (inclusive).
      */
     public static function since(LocalDateTime $start): self
     {
@@ -86,11 +66,7 @@ class LocalDateTimeInterval implements JsonSerializable
     }
 
     /**
-     * Creates an infinite open interval until given end.
-     *
-     * @param LocalDateTime $end the local datetime of upper boundary (exclusive)
-     *
-     * @return self new timestamp interval
+     * Creates an infinite open interval until given end (exclusive).
      */
     public static function until(LocalDateTime $end): self
     {
@@ -105,10 +81,7 @@ class LocalDateTimeInterval implements JsonSerializable
         return new self(null, null);
     }
 
-    /**
-     * @param LocalDate|LocalDateTime $day
-     */
-    public static function day($day): self
+    public static function day(LocalDate|LocalDateTime $day): self
     {
         Assert::isInstanceOfAny($day, [LocalDate::class, LocalDateTime::class]);
 
@@ -124,9 +97,7 @@ class LocalDateTimeInterval implements JsonSerializable
     /**
      * Creates an interval that contains (encompasses) every provided intervals
      *
-     * @param self ...$localDateTimeIntervals
-     *
-     * @return self|null new timestamp interval or null if the input is empty
+     * Returns new timestamp interval or null if the input is empty
      */
     public static function containerOf(self ...$localDateTimeIntervals): ?self
     {
@@ -191,7 +162,7 @@ class LocalDateTimeInterval implements JsonSerializable
     public function getFiniteStart(): LocalDateTime
     {
         if (null === $this->start) {
-            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
+            throw new RuntimeException(sprintf('The interval "%s" does not have a finite start.', $this));
         }
 
         return $this->start;
@@ -203,7 +174,7 @@ class LocalDateTimeInterval implements JsonSerializable
     public function getFiniteEnd(): LocalDateTime
     {
         if (null === $this->end) {
-            throw new \RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
+            throw new RuntimeException(sprintf('The interval "%s" does not have a finite end.', $this));
         }
 
         return $this->end;
@@ -238,58 +209,23 @@ class LocalDateTimeInterval implements JsonSerializable
     }
 
     /**
-     * Combines this local datetime interval with the timezone offset UTC+00:00 to a global UTC-interval.
-     *
-     * @return InstantInterval global timestamp interval interpreted at offset UTC+00:00
-     */
-    public function atUTC(): InstantInterval
-    {
-        return InstantInterval::between(
-            $this->start ? $this->start->atTimeZone(TimeZoneOffset::utc())->getInstant() : null,
-            $this->end ? $this->end->atTimeZone(TimeZoneOffset::utc())->getInstant() : null
-        );
-    }
-
-    /**
-     * Combines this local timestamp interval with given timezone to a ZonedInterval.
-     *
-     * @param TimeZoneRegion $timezoneId timezone id
-     *
-     * @return ZonedDateTimeInterval zoned datetime interval interpreted in given timezone
-     */
-    public function atTimeZone(TimeZoneRegion $timezoneId): ZonedDateTimeInterval
-    {
-        return ZonedDateTimeInterval::between(
-            $this->start ? $this->start->atTimeZone($timezoneId) : null,
-            $this->end ? $this->end->atTimeZone($timezoneId) : null
-        );
-    }
-
-    /**
      * Parses the given text as as interval.
-     *
-     * @param string $text text to be parsed
      */
     public static function parse(string $text): self
     {
         [$startStr, $endStr] = explode('/', trim($text), 2);
 
-        $startStr = new ByteString($startStr);
-        $endStr = new ByteString($endStr);
+        $startsWithPeriod = str_starts_with($startStr, 'P');
+        $startsWithInfinity = InfinityStyle::SYMBOL === $startStr;
 
-        $startsWithPeriod = $startStr->startsWith('P');
-        $startsWithInfinity = $startStr->equalsTo(InfinityStyle::SYMBOL);
-
-        $endsWithPeriod = $endStr->startsWith('P');
-        $endsWithInfinity = $endStr->equalsTo(InfinityStyle::SYMBOL);
+        $endsWithPeriod = str_starts_with($endStr, 'P');
+        $endsWithInfinity = InfinityStyle::SYMBOL === $endStr;
 
         if ($startsWithPeriod && $endsWithPeriod) {
             throw IntervalParseException::uniqueDuration($text);
         }
 
-        if (($startsWithPeriod && $endsWithInfinity) ||
-            ($startsWithInfinity && $endsWithPeriod)
-        ) {
+        if (($startsWithPeriod && $endsWithInfinity) || ($startsWithInfinity && $endsWithPeriod)) {
             throw IntervalParseException::durationIncompatibleWithInfinity($text);
         }
 
@@ -297,14 +233,14 @@ class LocalDateTimeInterval implements JsonSerializable
         if ($startsWithInfinity) {
             $ldt1 = null;
         } elseif ($startsWithPeriod) {
-            $ldt2 = LocalDateTime::parse($endStr->toString());
-            $ldt1 = $startStr->indexOf('T')
-                ? $ldt2->minusDuration(Duration::parse($startStr->toString()))
-                : $ldt2->minusPeriod(Period::parse($startStr->toString()));
+            $ldt2 = LocalDateTime::parse($endStr);
+            $ldt1 = str_contains($startStr, 'T')
+                ? $ldt2->minusDuration(Duration::parse($startStr))
+                : $ldt2->minusPeriod(Period::parse($startStr));
 
             return self::between($ldt1, $ldt2);
         } else {
-            $ldt1 = LocalDateTime::parse($startStr->toString());
+            $ldt1 = LocalDateTime::parse($startStr);
         }
 
         //END
@@ -312,13 +248,13 @@ class LocalDateTimeInterval implements JsonSerializable
             $ldt2 = null;
         } elseif ($endsWithPeriod) {
             if (null === $ldt1) {
-                throw new \RuntimeException('Cannot process end period without start.');
+                throw new RuntimeException('Cannot process end period without start.');
             }
-            $ldt2 = $endStr->indexOf('T')
-                ? $ldt1->plusDuration(Duration::parse($endStr->toString()))
-                : $ldt1->plusPeriod(Period::parse($endStr->toString()));
+            $ldt2 = str_contains($endStr, 'T')
+                ? $ldt1->plusDuration(Duration::parse($endStr))
+                : $ldt1->plusPeriod(Period::parse($endStr));
         } else {
-            $ldt2 = LocalDateTime::parse($endStr->toString());
+            $ldt2 = LocalDateTime::parse($endStr);
         }
 
         return self::between($ldt1, $ldt2);
@@ -326,14 +262,9 @@ class LocalDateTimeInterval implements JsonSerializable
 
     /**
      * Moves this interval along the POSIX-axis by the given duration or period.
-     *
-     * @param Duration|Period $periodOrDuration
-     *
-     * @return self moved copy of this interval
      */
-    public function move($periodOrDuration): self
+    public function move(Duration|Period $periodOrDuration): self
     {
-        /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
         if ($periodOrDuration instanceof Period) {
             return new self(
                 $this->start ? $this->start->plusPeriod($periodOrDuration) : null,
@@ -341,50 +272,45 @@ class LocalDateTimeInterval implements JsonSerializable
             );
         }
 
-        if ($periodOrDuration instanceof Duration) {
-            return new self(
-                $this->start ? $this->start->plusDuration($periodOrDuration) : null,
-                $this->end ? $this->end->plusDuration($periodOrDuration) : null
-            );
-        }
-
-        throw new \RuntimeException('The given value must be either Duration or Period.');
+        return new self(
+            $this->start ? $this->start->plusDuration($periodOrDuration) : null,
+            $this->end ? $this->end->plusDuration($periodOrDuration) : null
+        );
     }
 
     /**
      * Return the length of this interval and applies a timezone offset correction.
      *
-     * @return Duration duration including a zonal correction
+     * Returns duration including a zonal correction.
      */
     public function getDuration(): Duration
     {
         if (!$this->isFinite()) {
-            throw new \RuntimeException('Returning the duration with infinite boundary is not possible.');
+            throw new RuntimeException('Returning the duration with infinite boundary is not possible.');
         }
 
-        return $this->atUTC()->getDuration();
+        return Duration::between(
+            $this->getFiniteStart()->atTimeZone(TimeZoneOffset::utc())->getInstant(),
+            $this->getFiniteEnd()->atTimeZone(TimeZoneOffset::utc())->getInstant()
+        );
     }
 
     /**
      * Iterates through every moments which are the result of adding the given duration or period
      * to the start until the end of this interval is reached.
      *
-     * @param Period|Duration $periodOrDuration
-     *
      * @return Traversable<LocalDateTime>
      */
-    public function iterate($periodOrDuration): Traversable
+    public function iterate(Duration|Period $periodOrDuration): Traversable
     {
-        /** @var Period|Duration|mixed $periodOrDuration (for static analysis)) */
         if (!$this->isFinite()) {
-            throw new \RuntimeException('Iterate is not supported for infinite intervals.');
+            throw new RuntimeException('Iterate is not supported for infinite intervals.');
         }
 
-        if (!($periodOrDuration instanceof Period || $periodOrDuration instanceof Duration)) {
-            throw new \RuntimeException('Instance of Duration or Period expected.');
-        }
-
-        for ($start = $this->getFiniteStart(); $start->isBefore($this->getFiniteEnd());) {
+        for (
+            $start = $this->getFiniteStart();
+            $start->isBefore($this->getFiniteEnd());
+        ) {
             yield $start;
 
             $start = $periodOrDuration instanceof Period
@@ -409,11 +335,9 @@ class LocalDateTimeInterval implements JsonSerializable
      *
      * Each slice is at most as long as the given period or duration. The last slice might be shorter.
      *
-     * @param Period|Duration $periodOrDuration
-     *
      * @return Traversable<self>
      */
-    public function slice($periodOrDuration): Traversable
+    public function slice(Duration|Period $periodOrDuration): Traversable
     {
         foreach ($this->iterate($periodOrDuration) as $start) {
             $end = $periodOrDuration instanceof Period
@@ -439,13 +363,13 @@ class LocalDateTimeInterval implements JsonSerializable
     /**
      * Is the finite end of this interval before or equal to the given local datetime.
      */
-    public function isBefore(LocalDateTime $t): bool
+    public function isBefore(LocalDateTime $timepoint): bool
     {
         if ($this->hasInfiniteEnd()) {
             return false;
         }
 
-        return $this->getFiniteEnd()->isBeforeOrEqualTo($t);
+        return $this->getFiniteEnd()->isBeforeOrEqualTo($timepoint);
     }
 
     /**
@@ -466,13 +390,13 @@ class LocalDateTimeInterval implements JsonSerializable
     /**
      * Is the finite start end of this interval after the given local datetime.
      */
-    public function isAfter(LocalDateTime $t): bool
+    public function isAfter(LocalDateTime $timepoint): bool
     {
         if ($this->hasInfiniteStart()) {
             return false;
         }
 
-        return $this->getFiniteStart()->isAfter($t);
+        return $this->getFiniteStart()->isAfter($timepoint);
     }
 
     /**
@@ -486,10 +410,10 @@ class LocalDateTimeInterval implements JsonSerializable
     /**
      * Queries if given time point belongs to this interval.
      */
-    public function contains(LocalDateTime $t): bool
+    public function contains(LocalDateTime $timepoint): bool
     {
-        return ($this->hasInfiniteStart() || !$this->getFiniteStart()->isAfter($t))
-            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($t));
+        return ($this->hasInfiniteStart() || !$this->getFiniteStart()->isAfter($timepoint))
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isAfter($timepoint));
     }
 
     /**
@@ -582,7 +506,8 @@ class LocalDateTimeInterval implements JsonSerializable
     public function finishes(self $other): bool
     {
         if ((null === $this->end && null !== $other->end) ||
-            (null !== $this->end && null === $other->end)) {
+            (null !== $this->end && null === $other->end)
+        ) {
             return false;
         }
 
@@ -617,7 +542,8 @@ class LocalDateTimeInterval implements JsonSerializable
     public function starts(self $other): bool
     {
         if ((null === $this->start && null !== $other->start) ||
-            (null !== $this->start && null === $other->start)) {
+            (null !== $this->start && null === $other->start)
+        ) {
             return false;
         }
 
@@ -695,13 +621,10 @@ class LocalDateTimeInterval implements JsonSerializable
      */
     public function overlaps(self $other): bool
     {
-        return
-
-                !($this->hasInfiniteEnd() || $other->hasInfiniteStart()) &&
-                ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart())) &&
-                ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd())) &&
-                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
-            ;
+        return !($this->hasInfiniteEnd() || $other->hasInfiniteStart())
+            && ($this->hasInfiniteStart() || $this->getFiniteStart()->isBefore($other->getFiniteStart()))
+            && ($other->hasInfiniteEnd() || $this->getFiniteEnd()->isBefore($other->getFiniteEnd()))
+            && $this->getFiniteEnd()->isAfter($other->getFiniteStart());
     }
 
     /**
@@ -715,9 +638,7 @@ class LocalDateTimeInterval implements JsonSerializable
     /**
      * Queries if this interval intersects the other one such that there is at least one common time point.
      *
-     * @param self $other another interval which might have an intersection with this interval
-     *
-     * @return bool "true" if there is an non-empty intersection of this interval and the other one else "false"
+     * Returns "true" if there is an non-empty intersection of this interval and the other one else "false"
      */
     public function intersects(self $other): bool
     {
@@ -728,16 +649,8 @@ class LocalDateTimeInterval implements JsonSerializable
             return $this->contains($other->getFiniteStart());
         }
 
-        return
-            (
-                $this->hasInfiniteStart() ||
-                $other->hasInfiniteEnd() ||
-                $this->getFiniteStart()->isBefore($other->getFiniteEnd())) &&
-            (
-                $this->hasInfiniteEnd() ||
-                $other->hasInfiniteStart() ||
-                $this->getFiniteEnd()->isAfter($other->getFiniteStart())
-            );
+        return ($this->hasInfiniteStart() || $other->hasInfiniteEnd() || $this->getFiniteStart()->isBefore($other->getFiniteEnd()))
+            && ($this->hasInfiniteEnd() || $other->hasInfiniteStart() || $this->getFiniteEnd()->isAfter($other->getFiniteStart()));
     }
 
     /**
@@ -754,19 +667,19 @@ class LocalDateTimeInterval implements JsonSerializable
      * Changes this interval to an empty interval with the same
      * start anchor.
      *
-     * @return self empty interval with same start (anchor always inclusive)
+     * Returns empty interval with same start (anchor always inclusive)
      */
     public function collapse(): self
     {
         if ($this->hasInfiniteStart()) {
-            throw new \RuntimeException('An interval with infinite start cannot be collapsed.');
+            throw new RuntimeException('An interval with infinite start cannot be collapsed.');
         }
 
         return self::between($this->start, $this->start);
     }
 
     /**
-     * @param LocalDateTimeInterval|null ...$others Null can come from the result of {@see containerOf()}
+     * Null can come as input from the result of {@see containerOf()}
      */
     public function expand(?self ...$others): self
     {
@@ -785,9 +698,7 @@ class LocalDateTimeInterval implements JsonSerializable
     /**
      * Obtains the intersection of this interval and other one if present.
      *
-     * @param self $other another interval which might have an intersection with this interval
-     *
-     * @return  self|null wrapper around the found intersection or null
+     * Returns a wrapper around the found intersection or null
      */
     public function findIntersection(self $other): ?self
     {
@@ -824,14 +735,13 @@ class LocalDateTimeInterval implements JsonSerializable
     public function isEqualTo(self $other): bool
     {
         if ($this->hasInfiniteStart() !== $other->hasInfiniteStart() ||
-            $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()) {
+            $this->hasInfiniteEnd() !== $other->hasInfiniteEnd()
+        ) {
             return false;
         }
 
-        return
-            ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart())) &&
-            ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()))
-        ;
+        return ($this->hasInfiniteStart() || $this->getFiniteStart()->isEqualTo($other->getFiniteStart()))
+            && ($this->hasInfiniteEnd() || $this->getFiniteEnd()->isEqualTo($other->getFiniteEnd()));
     }
 
     public function compareTo(self $other): int

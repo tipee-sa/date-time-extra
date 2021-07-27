@@ -11,17 +11,28 @@ use Brick\DateTime\ZonedDateTime;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 
-class InstantType extends Type
+final class InstantType extends Type
 {
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform): string
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
-        return $platform->getDateTimeTypeDeclarationSQL($fieldDeclaration);
+        return $platform->getDateTimeTypeDeclarationSQL($column);
     }
 
     /**
-     * {@inheritdoc}
+     * @param Instant|null $value
      */
-    public function convertToPHPValue($value, AbstractPlatform $platform)
+    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        return ZonedDateTime::ofInstant($value, TimeZone::utc())
+            ->toDateTime()
+            ->format($platform->getDateTimeFormatString());
+    }
+
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?Instant
     {
         if ($value) {
             return LocalDateTime::fromDateTime(new \DateTime($value))
@@ -32,24 +43,6 @@ class InstantType extends Type
         return null;
     }
 
-    /**
-     * @param Instant|null $value
-     */
-    public function convertToDatabaseValue($value, AbstractPlatform $platform)
-    {
-        if (null === $value) {
-            return null;
-        }
-
-        return ZonedDateTime::ofInstant($value, TimeZone::utc())
-            ->toDateTime()
-            ->format($platform->getDateTimeFormatString())
-        ;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return 'instant';

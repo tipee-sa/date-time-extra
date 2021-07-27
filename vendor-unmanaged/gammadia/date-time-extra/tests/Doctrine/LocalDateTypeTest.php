@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Gammadia\DateTimeExtra\Test\Unit\Doctrine;
 
-use Brick\DateTime\LocalDate;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Gammadia\DateTimeExtra\Doctrine\LocalDateType;
@@ -13,15 +12,8 @@ use ReflectionClass;
 
 final class LocalDateTypeTest extends TestCase
 {
-    /**
-     * @var LocalDateType
-     */
-    private $type;
-
-    /**
-     * @var AbstractPlatform
-     */
-    private $platform;
+    private LocalDateType $type;
+    private AbstractPlatform $platform;
 
     protected function setUp(): void
     {
@@ -31,17 +23,14 @@ final class LocalDateTypeTest extends TestCase
 
     public function testGetSQLDeclaration(): void
     {
-        self::assertSame(
-            'DATE',
-            $this->type->getSQLDeclaration([], $this->platform)
-        );
+        self::assertSame('DATE', $this->type->getSQLDeclaration([], $this->platform));
     }
 
     public function testConvertToPHPValue(): void
     {
-        /** @var LocalDate $localDate */
         $localDate = $this->type->convertToPHPValue('2019-02-02', $this->platform);
 
+        self::assertNotNull($localDate);
         self::assertSame('2019-02-02', (string) $localDate);
     }
 

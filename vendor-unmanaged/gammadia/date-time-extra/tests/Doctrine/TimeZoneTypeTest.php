@@ -11,17 +11,10 @@ use Gammadia\DateTimeExtra\Doctrine\TimeZoneType;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
-class TimeZoneTypeTest extends TestCase
+final class TimeZoneTypeTest extends TestCase
 {
-    /**
-     * @var TimeZoneType
-     */
-    private $type;
-
-    /**
-     * @var AbstractPlatform
-     */
-    private $platform;
+    private TimeZoneType $type;
+    private AbstractPlatform $platform;
 
     protected function setUp(): void
     {
@@ -31,37 +24,24 @@ class TimeZoneTypeTest extends TestCase
 
     public function testConvertToDatabaseValue(): void
     {
-        self::assertSame(
-            'Europe/Zurich',
-            $this->type->convertToDatabaseValue(
-                TimeZone::parse('Europe/Zurich'),
-                $this->platform
-            )
-        );
+        $timezone = 'Europe/Zurich';
+        self::assertSame($timezone, $this->type->convertToDatabaseValue(TimeZone::parse($timezone), $this->platform));
 
-        self::assertSame(
-            'Z',
-            $this->type->convertToDatabaseValue(
-                TimeZone::utc(),
-                $this->platform
-            )
-        );
+        self::assertSame('Z', $this->type->convertToDatabaseValue(TimeZone::utc(), $this->platform));
     }
 
     public function testGetSQLDeclaration(): void
     {
-        self::assertSame(
-            'VARCHAR(255)',
-            $this->type->getSQLDeclaration([], $this->platform)
-        );
+        self::assertSame('VARCHAR(255)', $this->type->getSQLDeclaration([], $this->platform));
     }
 
     public function testConvertToPHPValue(): void
     {
-        self::assertSame(
-            TimeZone::parse('Europe/Zurich')->getId(),
-            $this->type->convertToPHPValue('Europe/Zurich', $this->platform)->getId()
-        );
+        $timezone = 'Europe/Zurich';
+        $convertedValue = $this->type->convertToPHPValue($timezone, $this->platform);
+
+        self::assertNotNull($convertedValue);
+        self::assertSame(TimeZone::parse($timezone)->getId(), $convertedValue->getId());
     }
 
     public function testGetName(): void

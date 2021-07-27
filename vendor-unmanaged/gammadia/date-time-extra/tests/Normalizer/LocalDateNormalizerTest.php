@@ -10,7 +10,7 @@ use Gammadia\DateTimeExtra\Normalizer\LocalDateNormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
-class LocalDateNormalizerTest extends TestCase
+final class LocalDateNormalizerTest extends TestCase
 {
     public function testNormalize(): void
     {
@@ -29,7 +29,7 @@ class LocalDateNormalizerTest extends TestCase
 
         self::assertTrue($normalizer->supportsDenormalization($data, LocalDate::class));
         self::assertFalse($normalizer->supportsDenormalization($data, LocalTime::class));
-        self::assertTrue(LocalDate::of(2013, 1, 1)->isEqualTo($normalizer->denormalize($data, LocalDate::class)));
+        self::assertSame($data, (string) $normalizer->denormalize($data, LocalDate::class));
 
         $this->expectException(NotNormalizableValueException::class);
         $normalizer->denormalize('2013-13-32', LocalDate::class);

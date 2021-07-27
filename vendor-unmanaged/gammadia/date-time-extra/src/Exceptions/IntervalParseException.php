@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Gammadia\DateTimeExtra;
+namespace Gammadia\DateTimeExtra\Exceptions;
 
 use Throwable;
 
-class IntervalParseException extends \RuntimeException
+final class IntervalParseException extends \RuntimeException
 {
     public static function uniqueDuration(string $textToParse): self
     {

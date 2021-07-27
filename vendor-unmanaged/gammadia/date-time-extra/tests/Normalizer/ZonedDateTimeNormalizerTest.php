@@ -12,7 +12,7 @@ use Gammadia\DateTimeExtra\Normalizer\ZonedDateTimeNormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
-class ZonedDateTimeNormalizerTest extends TestCase
+final class ZonedDateTimeNormalizerTest extends TestCase
 {
     public function testNormalize(): void
     {
@@ -31,7 +31,7 @@ class ZonedDateTimeNormalizerTest extends TestCase
 
         self::assertTrue($normalizer->supportsDenormalization($data, ZonedDateTime::class));
         self::assertFalse($normalizer->supportsDenormalization($data, LocalTime::class));
-        self::assertTrue(ZonedDateTime::of(LocalDateTime::of(2013, 1, 1), TimeZone::parse('Europe/Zurich'))->isEqualTo($normalizer->denormalize($data, ZonedDateTime::class)));
+        self::assertSame($data, (string) $normalizer->denormalize($data, ZonedDateTime::class));
 
         $this->expectException(NotNormalizableValueException::class);
         $normalizer->denormalize('2013-01-01T00:00+01:00[Europe/Zurrich]', ZonedDateTime::class);

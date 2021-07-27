@@ -9,17 +9,22 @@ use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\Parser\DateTimeParseException;
 use Brick\DateTime\Period;
-use Brick\DateTime\TimeZoneOffset;
-use Brick\DateTime\TimeZoneRegion;
-use Gammadia\DateTimeExtra\InstantInterval;
-use Gammadia\DateTimeExtra\IntervalParseException;
+use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
-use Gammadia\DateTimeExtra\ZonedDateTimeInterval;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use function Gammadia\Collections\Functional\map;
 
-class LocalDateTimeIntervalTest extends TestCase
+final class LocalDateTimeIntervalTest extends TestCase
 {
+    public function testConstructThrowsInvalidArgumentExceptionInversedRanges(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Start after end: 2021-01-01T12:00 / 2021-01-01T11:30:24');
+
+        LocalDateTimeInterval::between(LocalDateTime::parse('2021-01-01T12:00'), LocalDateTime::parse('2021-01-01T11:30:24'));
+    }
+
     public function testToIsoString(): void
     {
         $start = LocalDateTime::parse('2007-01-01T10:15:30');
@@ -31,11 +36,12 @@ class LocalDateTimeIntervalTest extends TestCase
 
     public function testToIsoStringInfinity(): void
     {
-        $since = LocalDateTimeInterval::since(LocalDateTime::of(2016, 2, 28, 13, 20));
-        $until = LocalDateTimeInterval::until(LocalDateTime::of(2016, 2, 28, 13, 20));
+        $iso = '2016-02-28T13:20';
+        $date = LocalDateTime::parse($iso);
 
-        self::assertSame('2016-02-28T13:20/-', $since->toString());
-        self::assertSame('-/2016-02-28T13:20', $until->toString());
+        self::assertSame($iso . '/-', (string) LocalDateTimeInterval::since($date));
+        self::assertSame('-/' . $iso, (string) LocalDateTimeInterval::until($date));
+        self::assertSame('-/-', (string) LocalDateTimeInterval::forever());
     }
 
     public function testDay(): void
@@ -50,47 +56,12 @@ class LocalDateTimeIntervalTest extends TestCase
         );
     }
 
-    public function testInUTC(): void
-    {
-        $t1 = LocalDateTime::of(2014, 2, 27, 0, 0);
-        $t2 = LocalDateTime::of(2014, 5, 14, 23, 59, 59);
-
-        $m1 = $t1->atTimeZone(TimeZoneOffset::utc())->getInstant();
-        $m2 = $t2->atTimeZone(TimeZoneOffset::utc())->getInstant();
-
-        self::assertTrue(LocalDateTimeInterval::between($t1, $t2)->atUTC()->isEqualTo(InstantInterval::between($m1, $m2)));
-    }
-
-    public function testInTimezoneSaoPaulo(): void
-    {
-        $saoPaulo = TimeZoneRegion::of('America/Sao_Paulo');
-
-        $ldt1 = LocalDateTime::of(2016, 10, 16, 1, 0);
-        $ldt2 = LocalDateTime::of(2016, 10, 16, 2, 0);
-
-        self::assertTrue(
-            LocalDateTimeInterval::between($ldt1, $ldt2)->atTimeZone($saoPaulo)->isEqualTo(
-                ZonedDateTimeInterval::between($ldt1->atTimeZone($saoPaulo), $ldt2->atTimeZone($saoPaulo))
-            )
-        );
-    }
-
     public function testParseLocalDateTimeAndPeriod(): void
     {
-        $start = LocalDateTime::of(2012, 4, 1, 14, 15);
-        $end = LocalDateTime::of(2012, 4, 5, 16, 0);
-        $expected = LocalDateTimeInterval::between($start, $end);
+        $iso = '2012-04-01T14:15/2012-04-05T16:00';
 
-        self::assertTrue(LocalDateTimeInterval::parse('2012-04-01T14:15/P4DT1H45M')->isEqualTo($expected));
-    }
-
-    public function testParsePeriodAndLocalDateTime(): void
-    {
-        $start = LocalDateTime::of(2012, 4, 1, 14, 15);
-        $end = LocalDateTime::of(2012, 4, 5, 16, 0);
-        $expected = LocalDateTimeInterval::between($start, $end);
-
-        self::assertTrue(LocalDateTimeInterval::parse('P4DT1H45M/2012-04-05T16:00')->isEqualTo($expected));
+        self::assertSame($iso, (string) LocalDateTimeInterval::parse('2012-04-01T14:15/P4DT1H45M'));
+        self::assertSame($iso, (string) LocalDateTimeInterval::parse('P4DT1H45M/2012-04-05T16:00'));
     }
 
     /**
@@ -104,15 +75,13 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
-     * @return string[][]
+     * @return iterable<mixed>
      */
-    public function providerParseInvalidIntervalsThrowsIntervalParseException(): array
+    public function providerParseInvalidIntervalsThrowsIntervalParseException(): iterable
     {
-        return [
-            ['P4DT1H45M/P2DT1H45M'],
-            ['-/P2DT1H45M'],
-            ['P4DT1H45M/-'],
-        ];
+        yield ['P4DT1H45M/P2DT1H45M'];
+        yield ['-/P2DT1H45M'];
+        yield ['P4DT1H45M/-'];
     }
 
     /**
@@ -126,144 +95,77 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
-     * @return array<array<string>>
+     * @return iterable<mixed>
      */
-    public function providerParseInvalidIntervalsThrowsException(): array
+    public function providerParseInvalidIntervalsThrowsException(): iterable
     {
-        return [
-            ['2012-04-30T14:15/T16:00'],
-            ['2012-04-30T14:15/T24:00'],
-            ['2012-04-30T14:15/16:00'],
-            ['2012-092T14:15/096T16:00'],
-            ['2012-W13-7T14:15/W14-4T16:00'],
-            ['2012092T1415/096T1600'],
-            ['2012W137T1415/W144T1600'],
-            ['2012-092T14:15/2012-096T16:00'],
-            ['2012-W13-7T14:15/2012-W14-4T16:00'],
-            ['2012092T1415/2012096T1600'],
-            ['2012W137T1415/2012W144T1600'],
-            ['2012-04-01T14:15/P2M4DT1H45M'],
-            ['2012-092T14:15/P4DT1H45M'],
-            ['2012-W13-7T14:15/P0000-00-04T01:45'],
-            ['P4DT1H45M/2012-096T16:00'],
-            ['P0000-00-04T01:45/2012-W14-4T16:00'],
-            ['2015-01-01T08:45/+∞'],
-            ['-∞/2015-01-01T08:45'],
-            ['2015-01-01T08:45/+999999999-12-31T23:59:59,999999999'],
-            ['-∞/+∞'],
-        ];
-    }
-
-    public function testParseAlways(): void
-    {
-        self::assertTrue(LocalDateTimeInterval::parse('-/-')->isEqualTo(LocalDateTimeInterval::between(null, null)));
+        yield ['2012-04-30T14:15/T16:00'];
+        yield ['2012-04-30T14:15/T24:00'];
+        yield ['2012-04-30T14:15/16:00'];
+        yield ['2012-092T14:15/096T16:00'];
+        yield ['2012-W13-7T14:15/W14-4T16:00'];
+        yield ['2012092T1415/096T1600'];
+        yield ['2012W137T1415/W144T1600'];
+        yield ['2012-092T14:15/2012-096T16:00'];
+        yield ['2012-W13-7T14:15/2012-W14-4T16:00'];
+        yield ['2012092T1415/2012096T1600'];
+        yield ['2012W137T1415/2012W144T1600'];
+        yield ['2012-04-01T14:15/P2M4DT1H45M'];
+        yield ['2012-092T14:15/P4DT1H45M'];
+        yield ['2012-W13-7T14:15/P0000-00-04T01:45'];
+        yield ['P4DT1H45M/2012-096T16:00'];
+        yield ['P0000-00-04T01:45/2012-W14-4T16:00'];
+        yield ['2015-01-01T08:45/+∞'];
+        yield ['-∞/2015-01-01T08:45'];
+        yield ['2015-01-01T08:45/+999999999-12-31T23:59:59,999999999'];
+        yield ['-∞/+∞'];
     }
 
     public function testParseInfinity(): void
     {
-        $tsp = LocalDateTime::of(2015, 1, 1, 8, 45);
+        $timepoint = '2015-01-01T08:45';
 
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2015-01-01T08:45/-')->isEqualTo(LocalDateTimeInterval::since($tsp))
-        );
-
-        self::assertTrue(
-            LocalDateTimeInterval::parse('-/2015-01-01T08:45')->isEqualTo(LocalDateTimeInterval::until($tsp))
-        );
+        self::assertSame('2015-01-01T08:45/-', (string) LocalDateTimeInterval::parse($timepoint . '/-'));
+        self::assertSame('-/2015-01-01T08:45', (string) LocalDateTimeInterval::parse('-/' . $timepoint));
+        self::assertSame('-/-', (string) LocalDateTimeInterval::forever());
     }
 
     public function testGetDurationOfLocalDateTimeIntervalWithZonalCorrection(): void
     {
-        $interval =
-            LocalDatetimeInterval::between(
-                LocalDatetime::of(2014, 1, 1, 21, 45),
-                LocalDatetime::of(2014, 1, 31, 7, 0)
-            );
-
-        self::assertTrue(Duration::parse('P29DT9H15M')->isEqualTo($interval->getDuration()));
-    }
-
-    public function testMoveWithDuration(): void
-    {
-        //Duration
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-04-10T00:00:01/2013-01-01T00:00:00')
-                ->isEqualTo(
-                    LocalDateTimeInterval::parse('2012-04-10T00:00:00/2012-12-31T23:59:59')
-                        ->move(Duration::parse('+PT1S'))
-                )
-        );
-
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-04-10T00:00:00/2012-12-31T23:59:59')
-                ->isEqualTo(
-                    LocalDateTimeInterval::parse('2012-04-10T00:00:01/2013-01-01T00:00:00')
-                        ->move(Duration::parse('-PT1S'))
-                )
-        );
-
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-01T02:10/2012-01-02T00:10')
-                ->isEqualTo(
-                    LocalDateTimeInterval::parse('2012-01-01T01:50/2012-01-01T23:50')
-                        ->move(Duration::parse('PT20M'))
-                )
-        );
-
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-02T06:00/2012-01-02T16:00')
-                ->isEqualTo(
-                    LocalDateTimeInterval::parse('2012-01-01T10:00/2012-01-01T20:00')
-                        ->move(Duration::parse('PT20H'))
-                )
+        self::assertSame(
+            (string) Duration::parse('P29DT9H15M'),
+            (string) LocalDateTimeInterval::parse('2014-01-01T21:45/2014-01-31T07:00')->getDuration()
         );
     }
 
-    public function testMoveWithPeriod(): void
+    /**
+     * @dataProvider move
+     */
+    public function testMoveWithDuration(string $iso, Duration|Period $input, string $expected): void
     {
-        //Period
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-02T00:00/2012-01-03T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->move(Period::parse('P1D'))
-            )
-        );
+        self::assertSame($expected, (string) LocalDateTimeInterval::parse($iso)->move($input));
+    }
 
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-09T00:00/2012-01-10T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->move(Period::parse('P1W1D'))
-            )
-        );
+    /**
+     * @return iterable<mixed>
+     */
+    public function move(): iterable
+    {
+        yield ['2012-04-10T00:00:00/2012-12-31T23:59:59', Duration::parse('+PT1S'), '2012-04-10T00:00:01/2013-01-01T00:00'];
+        yield ['2012-04-10T00:00:01/2013-01-01T00:00', Duration::parse('-PT1S'), '2012-04-10T00:00/2012-12-31T23:59:59'];
 
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-02-09T00:00/2012-02-10T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->move(Period::parse('P1M1W1D'))
-            )
-        );
+        yield ['2012-01-01T01:50/2012-01-01T23:50', Duration::parse('PT20M'), '2012-01-01T02:10/2012-01-02T00:10'];
+        yield ['2012-01-01T10:00/2012-01-01T20:00', Duration::parse('PT20H'), '2012-01-02T06:00/2012-01-02T16:00'];
 
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2012-01-01T00:00/2012-01-02T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2012-02-09T00:00/2012-02-10T00:00')->move(Period::parse('-P1M1W1D'))
-            )
-        );
+        yield ['2012-01-01T00:00/2012-01-02T00:00', Period::parse('P1D'), '2012-01-02T00:00/2012-01-03T00:00'];
+        yield ['2012-01-01T00:00/2012-01-02T00:00', Period::parse('P1W1D'), '2012-01-09T00:00/2012-01-10T00:00'];
+        yield ['2012-01-01T00:00/2012-01-02T00:00', Period::parse('P1M1W1D'), '2012-02-09T00:00/2012-02-10T00:00'];
+        yield ['2012-02-09T00:00/2012-02-10T00:00', Period::parse('-P1M1W1D'), '2012-01-01T00:00/2012-01-02T00:00'];
 
-        //Leap year
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2017-02-28T00:00/2017-06-01T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2016-02-29T00:00/2016-06-01T00:00')->move(Period::parse('P1Y'))
-            )
-        );
-
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2016-02-28T00:00/2016-06-01T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2017-02-28T00:00/2017-06-01T00:00')->move(Period::parse('-P1Y'))
-            )
-        );
-
-        self::assertTrue(
-            LocalDateTimeInterval::parse('2015-02-28T00:00/2015-06-01T00:00')->isEqualTo(
-                LocalDateTimeInterval::parse('2016-02-29T00:00/2016-06-01T00:00')->move(Period::parse('-P1Y'))
-            )
-        );
+        // Leap year
+        yield ['2016-02-29T00:00/2016-06-01T00:00', Period::parse('P1Y'), '2017-02-28T00:00/2017-06-01T00:00'];
+        yield ['2017-02-28T00:00/2017-06-01T00:00', Period::parse('-P1Y'), '2016-02-28T00:00/2016-06-01T00:00'];
+        yield ['2016-02-29T00:00/2016-06-01T00:00', Period::parse('-P1Y'), '2015-02-28T00:00/2015-06-01T00:00'];
     }
 
     /**
@@ -284,7 +186,7 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
-     * @return iterable<array<mixed>>
+     * @return iterable<mixed>
      */
     public function iterateProvider(): iterable
     {
@@ -307,10 +209,9 @@ class LocalDateTimeIntervalTest extends TestCase
     /**
      * @dataProvider slicesCases
      *
-     * @param Period|Duration $durationOrPeriod
      * @param string[] $expected
      */
-    public function testSlices($durationOrPeriod, string $interval, array $expected): void
+    public function testSlices(Duration|Period $durationOrPeriod, string $interval, array $expected): void
     {
         $interval = LocalDateTimeInterval::parse($interval);
         $slices = map(
@@ -321,7 +222,7 @@ class LocalDateTimeIntervalTest extends TestCase
     }
 
     /**
-     * @return iterable<mixed[]>
+     * @return iterable<mixed>
      */
     public function slicesCases(): iterable
     {
@@ -368,97 +269,42 @@ class LocalDateTimeIntervalTest extends TestCase
 
     public function testWithStart(): void
     {
-        $start = LocalDatetime::of(2014, 1, 1);
-        $mid = LocalDatetime::of(2014, 1, 10);
-        $end = LocalDatetime::of(2014, 1, 20);
+        $start = '2014-01-01T00:00';
+        $end = '2014-01-20T00:00';
 
-        $interval = LocalDateTimeInterval::between($mid, $end);
-
-        self::assertTrue(LocalDateTimeInterval::between($start, $end)->isEqualTo($interval->withStart($start)));
+        self::assertSame(
+            $start . '/' . $end,
+            (string) LocalDateTimeInterval::parse('2014-01-10T00:00/' . $end)->withStart(LocalDateTime::parse($start))
+        );
     }
 
     public function testWithEnd(): void
     {
-        $start = LocalDatetime::of(2014, 1, 1);
-        $mid = LocalDatetime::of(2014, 1, 10);
-        $end = LocalDatetime::of(2014, 1, 20);
+        $start = '2014-01-01T00:00';
+        $end = '2014-01-20T00:00';
 
-        $interval = LocalDateTimeInterval::between($start, $mid);
-
-        self::assertTrue(LocalDateTimeInterval::between($start, $end)->isEqualTo($interval->withEnd($end)));
+        self::assertSame(
+            $start . '/' . $end,
+            (string) LocalDateTimeInterval::parse($start . '/2014-01-10T00:00')->withEnd(LocalDateTime::parse($end))
+        );
     }
 
     public function testSince(): void
     {
-        $since = LocalDateTimeInterval::since(LocalDateTime::of(2016, 2, 28, 13, 20));
-
-        self::assertTrue($since->hasInfiniteEnd());
+        self::assertSame('2016-02-28T13:20/-', (string) LocalDateTimeInterval::since(LocalDateTime::parse('2016-02-28T13:20')));
     }
 
     public function testUntil(): void
     {
-        $until = LocalDateTimeInterval::until(LocalDateTime::of(2016, 2, 28, 13, 20));
-
-        self::assertTrue($until->hasInfiniteStart());
+        self::assertSame('-/2016-02-28T13:20', (string) LocalDateTimeInterval::until(LocalDateTime::parse('2016-02-28T13:20')));
     }
 
     public function testEmpty(): void
     {
-        $interval = LocalDateTimeInterval::between(
-            LocalDateTime::of(2016, 2, 28, 13, 20),
-            LocalDateTime::of(2016, 2, 28, 13, 20)
-        );
+        $interval = LocalDateTimeInterval::empty(LocalDateTime::parse('2016-02-28T13:20'));
 
+        self::assertSame('2016-02-28T13:20/2016-02-28T13:20', (string) $interval);
         self::assertTrue($interval->isEmpty());
-        self::assertFalse(LocalDateTimeInterval::since(LocalDateTime::of(2016, 2, 28, 13, 20))->isEmpty());
-        self::assertFalse(LocalDateTimeInterval::until(LocalDateTime::of(2016, 2, 28, 13, 20))->isEmpty());
-    }
-
-    private function interval(string $i, string $strDuration = ''): LocalDateTimeInterval
-    {
-        $intervals = [
-            '----|2009' => LocalDateTimeInterval::until(LocalDateTime::of(2009, 1, 1, 0, 0, 0)),
-            '----|2010' => LocalDateTimeInterval::until(LocalDateTime::of(2010, 1, 1, 0, 0, 0)),
-            '----|2011' => LocalDateTimeInterval::until(LocalDateTime::of(2011, 1, 1, 0, 0, 0)),
-            '----|2012' => LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1, 0, 0, 0)),
-            '----|2013' => LocalDateTimeInterval::until(LocalDateTime::of(2013, 1, 1, 0, 0, 0)),
-            '----|2014' => LocalDateTimeInterval::until(LocalDateTime::of(2014, 1, 1, 0, 0, 0)),
-            '2009|2010' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2010-01-01T00:00:00'),
-            '2009|2011' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2011-01-01T00:00:00'),
-            '2009|2012' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2012-01-01T00:00:00'),
-            '2009|2013' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2013-01-01T00:00:00'),
-            '2010|2010' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2010-01-01T00:00:00'),
-            '2010|2011' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2011-01-01T00:00:00'),
-            '2010|2012' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2012-01-01T00:00:00'),
-            '2010|2013' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2013-01-01T00:00:00'),
-            '2011|2011' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2011-01-01T00:00:00'),
-            '2011|2012' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2012-01-01T00:00:00'),
-            '2011|2014' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2014-01-01T00:00:00'),
-            '2011|2013' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2013-01-01T00:00:00'),
-            '2012|2013' => LocalDateTimeInterval::parse('2012-01-01T00:00:00/2013-01-01T00:00:00'),
-            '2013|2014' => LocalDateTimeInterval::parse('2013-01-01T00:00:00/2014-01-01T00:00:00'),
-            '2009|----' => LocalDateTimeInterval::since(LocalDateTime::of(2009, 1, 1, 0, 0, 0)),
-            '2010|----' => LocalDateTimeInterval::since(LocalDateTime::of(2010, 1, 1, 0, 0, 0)),
-            '2011|----' => LocalDateTimeInterval::since(LocalDateTime::of(2011, 1, 1, 0, 0, 0)),
-            '2012|----' => LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1, 0, 0, 0)),
-            '2013|----' => LocalDateTimeInterval::since(LocalDateTime::of(2013, 1, 1, 0, 0, 0)),
-        ];
-
-        return $strDuration ? $intervals[$i]->move(Duration::parse($strDuration)) : $intervals[$i];
-    }
-
-    private function temporal(string $i): LocalDateTime
-    {
-        $temporal = [
-            '2009' => LocalDateTime::of(2009, 1, 1),
-            '2010' => LocalDateTime::of(2010, 1, 1),
-            '2011' => LocalDateTime::of(2011, 1, 1),
-            '2012' => LocalDateTime::of(2012, 1, 1),
-            '2013' => LocalDateTime::of(2013, 1, 1),
-            '2014' => LocalDateTime::of(2014, 1, 1),
-        ];
-
-        return $temporal[$i];
     }
 
     public function testIsBefore(): void
@@ -631,26 +477,13 @@ class LocalDateTimeIntervalTest extends TestCase
         self::assertNull($this->interval('----|2010')->findIntersection($this->interval('2010|2010')));
         self::assertNull($this->interval('2010|2010')->findIntersection($this->interval('2011|2011')));
 
-        $intersection = $this->interval('2010|----')->findIntersection($this->interval('2010|2010'));
-        self::assertTrue($intersection && $this->interval('2010|2010')->isEqualTo($intersection));
-
-        $intersection = $this->interval('2009|2011')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection && $this->interval('2010|2011')->isEqualTo($intersection));
-
-        $intersection2 = $this->interval('2010|2011')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection2 && $this->interval('2010|2011')->isEqualTo($intersection2));
-
-        $intersection3 = $this->interval('2011|2012')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection3 && $this->interval('2011|2012')->isEqualTo($intersection3));
-
-        $intersection4 = $this->interval('2011|2014')->findIntersection($this->interval('2010|2013'));
-        self::assertTrue($intersection4 && $this->interval('2011|2013')->isEqualTo($intersection4));
-
-        $intersection5 = $this->interval('----|2014')->findIntersection($this->interval('2011|2012'));
-        self::assertTrue($intersection5 && $this->interval('2011|2012')->isEqualTo($intersection5));
-
-        $intersection6 = $this->interval('----|2014')->findIntersection($this->interval('2011|2011'));
-        self::assertTrue($intersection6 && $this->interval('2011|2011')->isEqualTo($intersection6));
+        self::assertSame('2010-01-01T00:00/2010-01-01T00:00', (string) $this->interval('2010|----')->findIntersection($this->interval('2010|2010')));
+        self::assertSame('2010-01-01T00:00/2011-01-01T00:00', (string) $this->interval('2009|2011')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2010-01-01T00:00/2011-01-01T00:00', (string) $this->interval('2010|2011')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2011-01-01T00:00/2012-01-01T00:00', (string) $this->interval('2011|2012')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2011-01-01T00:00/2013-01-01T00:00', (string) $this->interval('2011|2014')->findIntersection($this->interval('2010|2013')));
+        self::assertSame('2011-01-01T00:00/2012-01-01T00:00', (string) $this->interval('----|2014')->findIntersection($this->interval('2011|2012')));
+        self::assertSame('2011-01-01T00:00/2011-01-01T00:00', (string) $this->interval('----|2014')->findIntersection($this->interval('2011|2011')));
     }
 
     public function testFinishes(): void
@@ -814,12 +647,15 @@ class LocalDateTimeIntervalTest extends TestCase
 
     public function testCollapse(): void
     {
-        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|2012')->collapse()));
-        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|----')->collapse()));
-        self::assertTrue($this->interval('2011|2011')->isEqualTo($this->interval('2011|2011')->collapse()));
+        $timepoint = LocalDateTime::parse('2011-01-01T00:00');
+        $iso = (string) LocalDateTimeInterval::empty($timepoint);
+
+        self::assertSame($iso, (string) LocalDateTimeInterval::parse('2011-01-01T00:00/2012-01-01T00:00')->collapse());
+        self::assertSame($iso, (string) LocalDateTimeInterval::since($timepoint)->collapse());
+        self::assertSame($iso, (string) LocalDateTimeInterval::empty($timepoint)->collapse());
     }
 
-    public function testEquals(): void
+    public function testIsEqualTo(): void
     {
         self::assertTrue($this->interval('----|2011')->isEqualTo($this->interval('----|2011')));
         self::assertTrue($this->interval('2010|2011')->isEqualTo($this->interval('2010|2011')));
@@ -1128,5 +964,52 @@ class LocalDateTimeIntervalTest extends TestCase
         yield 'Full infinite compared to infinite start' => ['-/-', '-/2020-01-03T00:00', 1];
         yield 'Full infinite compared to infinite end' => ['-/-', '2020-01-02T00:00/-', -1];
         yield 'Equal full infinite' => ['-/-', '-/-', 0];
+    }
+
+    private function interval(string $i, string $strDuration = ''): LocalDateTimeInterval
+    {
+        $intervals = [
+            '----|2009' => LocalDateTimeInterval::until(LocalDateTime::of(2009, 1, 1, 0, 0, 0)),
+            '----|2010' => LocalDateTimeInterval::until(LocalDateTime::of(2010, 1, 1, 0, 0, 0)),
+            '----|2011' => LocalDateTimeInterval::until(LocalDateTime::of(2011, 1, 1, 0, 0, 0)),
+            '----|2012' => LocalDateTimeInterval::until(LocalDateTime::of(2012, 1, 1, 0, 0, 0)),
+            '----|2013' => LocalDateTimeInterval::until(LocalDateTime::of(2013, 1, 1, 0, 0, 0)),
+            '----|2014' => LocalDateTimeInterval::until(LocalDateTime::of(2014, 1, 1, 0, 0, 0)),
+            '2009|2010' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2010-01-01T00:00:00'),
+            '2009|2011' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2011-01-01T00:00:00'),
+            '2009|2012' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2012-01-01T00:00:00'),
+            '2009|2013' => LocalDateTimeInterval::parse('2009-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2010|2010' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2010-01-01T00:00:00'),
+            '2010|2011' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2011-01-01T00:00:00'),
+            '2010|2012' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2012-01-01T00:00:00'),
+            '2010|2013' => LocalDateTimeInterval::parse('2010-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2011|2011' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2011-01-01T00:00:00'),
+            '2011|2012' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2012-01-01T00:00:00'),
+            '2011|2014' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2014-01-01T00:00:00'),
+            '2011|2013' => LocalDateTimeInterval::parse('2011-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2012|2013' => LocalDateTimeInterval::parse('2012-01-01T00:00:00/2013-01-01T00:00:00'),
+            '2013|2014' => LocalDateTimeInterval::parse('2013-01-01T00:00:00/2014-01-01T00:00:00'),
+            '2009|----' => LocalDateTimeInterval::since(LocalDateTime::of(2009, 1, 1, 0, 0, 0)),
+            '2010|----' => LocalDateTimeInterval::since(LocalDateTime::of(2010, 1, 1, 0, 0, 0)),
+            '2011|----' => LocalDateTimeInterval::since(LocalDateTime::of(2011, 1, 1, 0, 0, 0)),
+            '2012|----' => LocalDateTimeInterval::since(LocalDateTime::of(2012, 1, 1, 0, 0, 0)),
+            '2013|----' => LocalDateTimeInterval::since(LocalDateTime::of(2013, 1, 1, 0, 0, 0)),
+        ];
+
+        return $strDuration ? $intervals[$i]->move(Duration::parse($strDuration)) : $intervals[$i];
+    }
+
+    private function temporal(string $i): LocalDateTime
+    {
+        $temporal = [
+            '2009' => LocalDateTime::of(2009, 1, 1),
+            '2010' => LocalDateTime::of(2010, 1, 1),
+            '2011' => LocalDateTime::of(2011, 1, 1),
+            '2012' => LocalDateTime::of(2012, 1, 1),
+            '2013' => LocalDateTime::of(2013, 1, 1),
+            '2014' => LocalDateTime::of(2014, 1, 1),
+        ];
+
+        return $temporal[$i];
     }
 }

@@ -11,7 +11,7 @@ use Gammadia\DateTimeExtra\Normalizer\LocalDateIntervalNormalizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 
-class LocalDateIntervalNormalizerTest extends TestCase
+final class LocalDateIntervalNormalizerTest extends TestCase
 {
     public function testNormalize(): void
     {
@@ -30,7 +30,7 @@ class LocalDateIntervalNormalizerTest extends TestCase
 
         self::assertTrue($normalizer->supportsDenormalization($data, LocalDateInterval::class));
         self::assertFalse($normalizer->supportsDenormalization($data, LocalTime::class));
-        self::assertTrue(LocalDateInterval::between(LocalDate::of(2013, 1, 1), LocalDate::of(2013, 1, 1))->isEqualTo($normalizer->denormalize($data, LocalDateInterval::class)));
+        self::assertSame($data, (string) $normalizer->denormalize($data, LocalDateInterval::class));
 
         $this->expectException(NotNormalizableValueException::class);
         $normalizer->denormalize('2013-13-32/2013-13-32', LocalDateInterval::class);

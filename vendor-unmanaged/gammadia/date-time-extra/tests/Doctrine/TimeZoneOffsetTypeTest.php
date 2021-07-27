@@ -13,15 +13,8 @@ use ReflectionClass;
 
 final class TimeZoneOffsetTypeTest extends TestCase
 {
-    /**
-     * @var TimeZoneOffsetType
-     */
-    private $type;
-
-    /**
-     * @var AbstractPlatform
-     */
-    private $platform;
+    private TimeZoneOffsetType $type;
+    private AbstractPlatform $platform;
 
     protected function setUp(): void
     {
@@ -31,21 +24,8 @@ final class TimeZoneOffsetTypeTest extends TestCase
 
     public function testConvertToDatabaseValue(): void
     {
-        self::assertSame(
-            '+01:00',
-            $this->type->convertToDatabaseValue(
-                TimeZoneOffset::of(1),
-                $this->platform
-            )
-        );
-
-        self::assertSame(
-            'Z',
-            $this->type->convertToDatabaseValue(
-                TimeZoneOffset::utc(),
-                $this->platform
-            )
-        );
+        self::assertSame('+01:00', $this->type->convertToDatabaseValue(TimeZoneOffset::of(1), $this->platform));
+        self::assertSame('Z', $this->type->convertToDatabaseValue(TimeZoneOffset::utc(), $this->platform));
     }
 
     public function testGetName(): void

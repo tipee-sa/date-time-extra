@@ -11,23 +11,22 @@ use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class InstantNormalizer implements NormalizerInterface, DenormalizerInterface
+final class InstantNormalizer implements NormalizerInterface, DenormalizerInterface
 {
     /**
      * @param Instant $object
      * @param mixed[] $context
      */
-    public function normalize($object, ?string $format = null, array $context = []): string
+    public function normalize(mixed $object, ?string $format = null, array $context = []): string
     {
         return (string) $object;
     }
 
     /**
-     * @param mixed $data
      * @param class-string $type
      * @param mixed[] $context
      */
-    public function denormalize($data, string $type, ?string $format = null, array $context = []): Instant
+    public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): Instant
     {
         try {
             return ZonedDateTime::parse($data)->getInstant();
@@ -36,19 +35,15 @@ class InstantNormalizer implements NormalizerInterface, DenormalizerInterface
         }
     }
 
-    /**
-     * @param mixed $data
-     */
-    public function supportsNormalization($data, ?string $format = null): bool
+    public function supportsNormalization(mixed $data, ?string $format = null): bool
     {
         return $data instanceof Instant;
     }
 
     /**
-     * @param mixed $data
      * @param class-string $type
      */
-    public function supportsDenormalization($data, string $type, ?string $format = null): bool
+    public function supportsDenormalization(mixed $data, string $type, ?string $format = null): bool
     {
         return Instant::class === $type;
     }

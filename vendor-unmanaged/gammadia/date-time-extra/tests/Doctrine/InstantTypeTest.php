@@ -7,20 +7,13 @@ namespace Gammadia\DateTimeExtra\Test\Unit\Doctrine;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Gammadia\DateTimeExtra\Doctrine\InstantType;
-use Gammadia\Moment\Test\Unit\TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 final class InstantTypeTest extends TestCase
 {
-    /**
-     * @var InstantType
-     */
-    private $type;
-
-    /**
-     * @var AbstractPlatform
-     */
-    private $platform;
+    private InstantType $type;
+    private AbstractPlatform $platform;
 
     protected function setUp(): void
     {
