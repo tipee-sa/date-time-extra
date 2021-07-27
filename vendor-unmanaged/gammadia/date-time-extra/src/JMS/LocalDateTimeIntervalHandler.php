@@ -13,6 +13,9 @@ use JMS\Serializer\JsonDeserializationVisitor;
 use JMS\Serializer\JsonSerializationVisitor;
 use RuntimeException;
 
+/**
+ * @deprecated We should do everything we can NOT to implement normalizers for the legacy !
+ */
 final class LocalDateTimeIntervalHandler implements SubscribingHandlerInterface
 {
     /**
