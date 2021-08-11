@@ -600,6 +600,31 @@ final class LocalDateIntervalTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider expandToWeeks
+     */
+    public function testExpandToWeeks(string $iso, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalDateInterval::parse($iso)->expandToWeeks());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function expandToWeeks(): iterable
+    {
+        yield ['2020-06-10/2020-06-17', '2020-06-08/2020-06-21'];
+
+        // For an exact week, same expected
+        yield ['2020-05-04/2020-05-10', '2020-05-04/2020-05-10'];
+
+        // For a whole month
+        yield ['2020-09-01/2020-09-30', '2020-08-31/2020-10-04'];
+
+        // For a whole year
+        yield ['2020-01-01/2020-12-31', '2019-12-30/2021-01-03'];
+    }
+
     private function interval(string $i, string $strDuration = ''): LocalDateInterval
     {
         $intervals = [
