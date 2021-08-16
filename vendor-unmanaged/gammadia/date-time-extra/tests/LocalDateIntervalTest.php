@@ -6,6 +6,7 @@ namespace Gammadia\DateTimeExtra\Test\Unit;
 
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\Period;
+use Brick\DateTime\YearWeek;
 use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateInterval;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
@@ -548,6 +549,29 @@ final class LocalDateIntervalTest extends TestCase
             ],
             '2020-01-01/2020-01-04',
         ];
+    }
+
+    /**
+     * @dataProvider forWeek
+     *
+     * @param array<int, string|null> $others
+     */
+    public function testForWeek(YearWeek $yearWeek, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateInterval::forWeek($yearWeek)
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function forWeek(): iterable
+    {
+        yield [YearWeek::of(2019, 52), '2019-12-23/2019-12-29'];
+        yield [YearWeek::of(2020, 37), '2020-09-07/2020-09-13'];
+        yield [YearWeek::of(2021, 04), '2021-01-25/2021-01-31'];
     }
 
     /**
