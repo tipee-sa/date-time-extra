@@ -6,6 +6,7 @@ namespace Gammadia\DateTimeExtra\Test\Unit;
 
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\Period;
+use Brick\DateTime\YearWeek;
 use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use Gammadia\DateTimeExtra\LocalDateInterval;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
@@ -551,6 +552,27 @@ final class LocalDateIntervalTest extends TestCase
     }
 
     /**
+     * @dataProvider forWeek
+     */
+    public function testForWeek(YearWeek $yearWeek, string $expected): void
+    {
+        self::assertSame(
+            $expected,
+            (string) LocalDateInterval::forWeek($yearWeek)
+        );
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function forWeek(): iterable
+    {
+        yield [YearWeek::of(2019, 52), '2019-12-23/2019-12-29'];
+        yield [YearWeek::of(2020, 37), '2020-09-07/2020-09-13'];
+        yield [YearWeek::of(2021, 04), '2021-01-25/2021-01-31'];
+    }
+
+    /**
      * @dataProvider expand
      *
      * @param array<int, string|null> $others
@@ -598,6 +620,31 @@ final class LocalDateIntervalTest extends TestCase
             ],
             '2020-01-01/2020-01-10',
         ];
+    }
+
+    /**
+     * @dataProvider expandToWeeks
+     */
+    public function testExpandToWeeks(string $iso, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalDateInterval::parse($iso)->expandToWeeks());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function expandToWeeks(): iterable
+    {
+        yield ['2020-06-10/2020-06-17', '2020-06-08/2020-06-21'];
+
+        // For an exact week, same expected
+        yield ['2020-05-04/2020-05-10', '2020-05-04/2020-05-10'];
+
+        // For a whole month
+        yield ['2020-09-01/2020-09-30', '2020-08-31/2020-10-04'];
+
+        // For a whole year
+        yield ['2020-01-01/2020-12-31', '2019-12-30/2021-01-03'];
     }
 
     private function interval(string $i, string $strDuration = ''): LocalDateInterval

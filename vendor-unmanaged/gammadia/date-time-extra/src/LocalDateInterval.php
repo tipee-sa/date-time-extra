@@ -7,6 +7,7 @@ namespace Gammadia\DateTimeExtra;
 use Brick\DateTime\LocalDate;
 use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
+use Brick\DateTime\YearWeek;
 use Doctrine\ORM\Mapping as ORM;
 use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use JsonSerializable;
@@ -111,6 +112,14 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         );
     }
 
+    public static function forWeek(YearWeek $yearWeek): self
+    {
+        return self::between(
+            $yearWeek->getFirstDay(),
+            $yearWeek->getLastDay(),
+        );
+    }
+
     /**
      * Null can come as input from the result of {@see containerOf()}
      */
@@ -126,6 +135,14 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         Assert::notNull($expanded);
 
         return $expanded;
+    }
+
+    public function expandToWeeks(): self
+    {
+        return self::between(
+            $this->getStart()?->minusDays($this->getFiniteStart()->getDayOfWeek()->getValue() - 1),
+            $this->getEnd()?->plusDays(7 - $this->getFiniteEnd()->getDayOfWeek()->getValue()),
+        );
     }
 
     /**
