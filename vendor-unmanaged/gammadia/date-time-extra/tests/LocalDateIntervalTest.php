@@ -556,10 +556,7 @@ final class LocalDateIntervalTest extends TestCase
      */
     public function testForWeek(YearWeek $yearWeek, string $expected): void
     {
-        self::assertSame(
-            $expected,
-            (string) LocalDateInterval::forWeek($yearWeek)
-        );
+        self::assertSame($expected, (string) LocalDateInterval::forWeek($yearWeek));
     }
 
     /**
@@ -635,16 +632,49 @@ final class LocalDateIntervalTest extends TestCase
      */
     public function expandToWeeks(): iterable
     {
-        yield ['2020-06-10/2020-06-17', '2020-06-08/2020-06-21'];
+        yield 'Exactly a week (no changes)' => [
+            '2020-05-04/2020-05-10',
+            '2020-05-04/2020-05-10',
+        ];
+        yield 'With an infinite range (no change)' => [
+            '-/-',
+            '-/-',
+        ];
 
-        // For an exact week, same expected
-        yield ['2020-05-04/2020-05-10', '2020-05-04/2020-05-10'];
+        yield 'Start at week\'s start' => [
+            '2020-06-08/2020-06-12',
+            '2020-06-08/2020-06-14',
+        ];
+        yield 'End at week\'s end' => [
+            '2020-06-10/2020-06-14',
+            '2020-06-08/2020-06-14',
+        ];
+        yield 'Within a week' => [
+            '2020-06-10/2020-06-12',
+            '2020-06-08/2020-06-14',
+        ];
+        yield 'Over a week' => [
+            '2020-06-10/2020-06-17',
+            '2020-06-08/2020-06-21',
+        ];
 
-        // For a whole month
-        yield ['2020-09-01/2020-09-30', '2020-08-31/2020-10-04'];
+        yield 'For a whole month' => [
+            '2020-09-01/2020-09-30',
+            '2020-08-31/2020-10-04',
+        ];
+        yield 'For a whole year' => [
+            '2020-01-01/2020-12-31',
+            '2019-12-30/2021-01-03',
+        ];
 
-        // For a whole year
-        yield ['2020-01-01/2020-12-31', '2019-12-30/2021-01-03'];
+        yield 'With an infinite start' => [
+            '-/2020-06-12',
+            '-/2020-06-14',
+        ];
+        yield 'With an infinite end' => [
+            '2020-06-12/-',
+            '2020-06-08/-',
+        ];
     }
 
     private function interval(string $i, string $strDuration = ''): LocalDateInterval
