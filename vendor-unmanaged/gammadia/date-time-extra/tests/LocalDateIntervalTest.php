@@ -553,8 +553,6 @@ final class LocalDateIntervalTest extends TestCase
 
     /**
      * @dataProvider forWeek
-     *
-     * @param array<int, string|null> $others
      */
     public function testForWeek(YearWeek $yearWeek, string $expected): void
     {
