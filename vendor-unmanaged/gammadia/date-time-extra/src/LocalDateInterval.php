@@ -137,7 +137,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         return $expanded;
     }
 
-    public function expandToWeeks(): self
+    public function toFullWeeks(): self
     {
         return self::between(
             $this->getStart()?->minusDays($this->getFiniteStart()->getDayOfWeek()->getValue() - 1),

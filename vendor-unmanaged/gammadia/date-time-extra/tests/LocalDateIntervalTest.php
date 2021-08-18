@@ -620,17 +620,17 @@ final class LocalDateIntervalTest extends TestCase
     }
 
     /**
-     * @dataProvider expandToWeeks
+     * @dataProvider toFullWeeks
      */
-    public function testExpandToWeeks(string $iso, string $expected): void
+    public function testToFullWeeks(string $iso, string $expected): void
     {
-        self::assertSame($expected, (string) LocalDateInterval::parse($iso)->expandToWeeks());
+        self::assertSame($expected, (string) LocalDateInterval::parse($iso)->toFullWeeks());
     }
 
     /**
      * @return iterable<mixed>
      */
-    public function expandToWeeks(): iterable
+    public function toFullWeeks(): iterable
     {
         yield 'Exactly a week (no changes)' => [
             '2020-05-04/2020-05-10',
