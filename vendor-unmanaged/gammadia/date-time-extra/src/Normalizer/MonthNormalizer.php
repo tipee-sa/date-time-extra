@@ -19,8 +19,8 @@ final class MonthNormalizer implements NormalizerInterface, DenormalizerInterfac
 
     public function __construct()
     {
-        $this->months = mapWithKeys(Month::getAll(), fn (Month $Month): iterable
-            => yield $this->normalize($Month) => $Month
+        $this->months = mapWithKeys(Month::getAll(), fn (Month $month): iterable
+            => yield $this->normalize($month) => $month,
         );
     }
 

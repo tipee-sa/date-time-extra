@@ -95,7 +95,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
 
                 return self::between(
                     $timeRange->hasInfiniteStart() ? null : $timeRange->getFiniteStart()->getDate(),
-                    $timeRange->hasInfiniteEnd() ? null : $timeRange->getFiniteEnd()->getDate()->minusDays(1)
+                    $timeRange->hasInfiniteEnd() ? null : $timeRange->getFiniteEnd()->getDate()->minusDays(1),
                 );
             }
 
@@ -106,8 +106,8 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         $ends = map($localDateIntervals, static fn (self $localDateInterval): ?LocalDate => $localDateInterval->getEnd());
 
         return self::between(
-            contains($starts, null, true) ? null : LocalDate::minOf(...$starts),
-            contains($ends, null, true) ? null : LocalDate::maxOf(...$ends)
+            contains($starts, value: null, strict: true) ? null : LocalDate::minOf(...$starts),
+            contains($ends, value: null, strict: true) ? null : LocalDate::maxOf(...$ends),
         );
     }
 
@@ -136,7 +136,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
     {
         return LocalDateTimeInterval::between(
             $this->hasInfiniteStart() ? null : $this->getFiniteStart()->atTime(LocalTime::min()),
-            $this->hasInfiniteEnd() ? null : $this->getFiniteEnd()->atTime(LocalTime::min())->plusDays(1)
+            $this->hasInfiniteEnd() ? null : $this->getFiniteEnd()->atTime(LocalTime::min())->plusDays(1),
         );
     }
 
@@ -171,7 +171,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
     {
         return new self(
             $this->start ? $this->start->plusPeriod($period) : null,
-            $this->end ? $this->end->plusPeriod($period) : null
+            $this->end ? $this->end->plusPeriod($period) : null,
         );
     }
 
@@ -271,7 +271,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         return sprintf(
             '%s/%s',
             $this->getStartIso(),
-            $this->getEndIso()
+            $this->getEndIso(),
         );
     }
 

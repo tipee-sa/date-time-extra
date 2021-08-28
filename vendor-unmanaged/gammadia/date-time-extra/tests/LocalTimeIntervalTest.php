@@ -137,7 +137,7 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             (string) LocalTimeInterval::empty(LocalTime::parse('12:34')),
-            (string) LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::zero())
+            (string) LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::zero()),
         );
     }
 
@@ -145,7 +145,7 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             (string) LocalTimeInterval::parse('12:34/PT2H'),
-            (string) LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2))
+            (string) LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2)),
         );
     }
 
@@ -200,7 +200,7 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             $expected,
-            (string) LocalTimeInterval::parse($iso)->withTimepoint(LocalTime::parse($timepointIso))
+            (string) LocalTimeInterval::parse($iso)->withTimepoint(LocalTime::parse($timepointIso)),
         );
     }
 
@@ -223,7 +223,7 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             $expected,
-            (string) LocalTimeInterval::parse($iso)->withDuration(Duration::parse($durationIso))
+            (string) LocalTimeInterval::parse($iso)->withDuration(Duration::parse($durationIso)),
         );
     }
 
@@ -282,7 +282,7 @@ final class LocalTimeIntervalTest extends TestCase
     {
         self::assertSame(
             (string) LocalTimeInterval::parse($expected),
-            (string) LocalTimeInterval::parse($input)->toFullDays()
+            (string) LocalTimeInterval::parse($input)->toFullDays(),
         );
     }
 
