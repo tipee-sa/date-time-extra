@@ -27,7 +27,7 @@ final class LocalDateIntervalTest extends TestCase
     {
         self::assertSame(
             '2010-01-01/2011-01-01',
-            (string) LocalDateInterval::between(LocalDate::parse('2010-01-01'), LocalDate::parse('2011-01-01'))
+            (string) LocalDateInterval::between(LocalDate::parse('2010-01-01'), LocalDate::parse('2011-01-01')),
         );
     }
 
@@ -116,7 +116,7 @@ final class LocalDateIntervalTest extends TestCase
     {
         self::assertCount(
             $expectedCount,
-            iterator_to_array(LocalDateInterval::iterateDaily(LocalDate::parse($startIso), LocalDate::parse($endIso)))
+            iterator_to_array(LocalDateInterval::iterateDaily(LocalDate::parse($startIso), LocalDate::parse($endIso))),
         );
     }
 
@@ -141,7 +141,7 @@ final class LocalDateIntervalTest extends TestCase
     {
         self::assertCount(
             $expected,
-            iterator_to_array(LocalDateInterval::parse('2010-01-01/2011-01-01')->iterate(Period::parse($strPeriod)))
+            iterator_to_array(LocalDateInterval::parse('2010-01-01/2011-01-01')->iterate(Period::parse($strPeriod))),
         );
     }
 
@@ -218,7 +218,7 @@ final class LocalDateIntervalTest extends TestCase
     {
         self::assertSame(
             '2020-06-28/2020-06-30',
-            (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->withStart(LocalDate::parse('2020-06-28'))
+            (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->withStart(LocalDate::parse('2020-06-28')),
         );
     }
 
@@ -226,7 +226,7 @@ final class LocalDateIntervalTest extends TestCase
     {
         self::assertSame(
             '2020-06-29/2020-07-01',
-            (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->withEnd(LocalDate::parse('2020-07-01'))
+            (string) LocalDateInterval::parse('2020-06-29/2020-06-30')->withEnd(LocalDate::parse('2020-07-01')),
         );
     }
 
@@ -509,11 +509,12 @@ final class LocalDateIntervalTest extends TestCase
         self::assertSame(
             $expected,
             (string) LocalDateInterval::containerOf(
-                ...map($input, static fn (string $timeRange) =>
-                    str_contains($timeRange, 'T')
+                ...map($input, static fn (string $timeRange)
+                    => str_contains($timeRange, 'T')
                         ? LocalDateTimeInterval::parse($timeRange)
-                        : LocalDateInterval::parse($timeRange))
-            )
+                        : LocalDateInterval::parse($timeRange),
+                ),
+            ),
         );
     }
 
@@ -561,9 +562,9 @@ final class LocalDateIntervalTest extends TestCase
             $expected,
             (string) LocalDateInterval::parse($iso)->expand(
                 ...map($others, static fn (?string $timeRange): ?LocalDateInterval
-                    => null !== $timeRange ? LocalDateInterval::parse($timeRange) : null
-                )
-            )
+                    => null !== $timeRange ? LocalDateInterval::parse($timeRange) : null,
+                ),
+            ),
         );
     }
 

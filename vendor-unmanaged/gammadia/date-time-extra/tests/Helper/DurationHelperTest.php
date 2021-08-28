@@ -57,7 +57,7 @@ final class DurationHelperTest extends TestCase
     {
         self::assertSame(
             (string) $expected,
-            (string) DurationHelper::dailyHoursToEffectiveDuration($input, LocalDateTimeInterval::parse($timeRange))
+            (string) DurationHelper::dailyHoursToEffectiveDuration($input, LocalDateTimeInterval::parse($timeRange)),
         );
     }
 
