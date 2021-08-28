@@ -20,7 +20,7 @@ final class DayOfWeekNormalizer implements NormalizerInterface, DenormalizerInte
     public function __construct()
     {
         $this->daysOfWeek = mapWithKeys(DayOfWeek::all(), fn (DayOfWeek $dayOfWeek): iterable
-            => yield $this->normalize($dayOfWeek) => $dayOfWeek
+            => yield $this->normalize($dayOfWeek) => $dayOfWeek,
         );
     }
 
@@ -40,7 +40,7 @@ final class DayOfWeekNormalizer implements NormalizerInterface, DenormalizerInte
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): DayOfWeek
     {
         return $this->daysOfWeek[(string) $data] ?? throw new NotNormalizableValueException(
-            sprintf('The value "%s" is not a valid day of week.', $data)
+            sprintf('The value "%s" is not a valid day of week.', $data),
         );
     }
 

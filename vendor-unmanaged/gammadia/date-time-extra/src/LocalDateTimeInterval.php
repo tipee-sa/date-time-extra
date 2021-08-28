@@ -109,8 +109,8 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
         $ends = map($localDateTimeIntervals, static fn (self $localDateTimeInterval): ?LocalDateTime => $localDateTimeInterval->getEnd());
 
         return self::between(
-            contains($starts, null, true) ? null : LocalDateTime::minOf(...$starts),
-            contains($ends, null, true) ? null : LocalDateTime::maxOf(...$ends)
+            contains($starts, value: null, strict: true) ? null : LocalDateTime::minOf(...$starts),
+            contains($ends, value: null, strict: true) ? null : LocalDateTime::maxOf(...$ends),
         );
     }
 
@@ -126,7 +126,7 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
                 !$this->isEmpty() && $this->getFiniteEnd()->getTime()->isEqualTo(LocalTime::min())
                     ? $this->getFiniteEnd()
                     : $this->getFiniteEnd()->plusDays(1)->withTime(LocalTime::min())
-            )
+            ),
         );
     }
 
@@ -204,7 +204,7 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
         return sprintf(
             '%s/%s',
             $this->hasInfiniteStart() ? InfinityStyle::SYMBOL : $this->start,
-            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end
+            $this->hasInfiniteEnd() ? InfinityStyle::SYMBOL : $this->end,
         );
     }
 
@@ -268,13 +268,13 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
         if ($periodOrDuration instanceof Period) {
             return new self(
                 $this->start ? $this->start->plusPeriod($periodOrDuration) : null,
-                $this->end ? $this->end->plusPeriod($periodOrDuration) : null
+                $this->end ? $this->end->plusPeriod($periodOrDuration) : null,
             );
         }
 
         return new self(
             $this->start ? $this->start->plusDuration($periodOrDuration) : null,
-            $this->end ? $this->end->plusDuration($periodOrDuration) : null
+            $this->end ? $this->end->plusDuration($periodOrDuration) : null,
         );
     }
 
@@ -291,7 +291,7 @@ final class LocalDateTimeInterval implements JsonSerializable, Stringable
 
         return Duration::between(
             $this->getFiniteStart()->atTimeZone(TimeZoneOffset::utc())->getInstant(),
-            $this->getFiniteEnd()->atTimeZone(TimeZoneOffset::utc())->getInstant()
+            $this->getFiniteEnd()->atTimeZone(TimeZoneOffset::utc())->getInstant(),
         );
     }
 

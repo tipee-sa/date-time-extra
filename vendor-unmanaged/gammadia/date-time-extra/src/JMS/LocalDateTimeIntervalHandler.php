@@ -52,7 +52,7 @@ final class LocalDateTimeIntervalHandler implements SubscribingHandlerInterface
             throw new RuntimeException(
                 sprintf('Invalid interval: "%s"', $interval),
                 HttpStatus::HTTP_BAD_REQUEST,
-                $throwable
+                $throwable,
             );
         }
     }
