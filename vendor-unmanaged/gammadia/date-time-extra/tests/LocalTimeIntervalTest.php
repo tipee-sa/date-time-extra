@@ -181,12 +181,32 @@ final class LocalTimeIntervalTest extends TestCase
         self::assertSame($expected, (string) LocalTimeInterval::parse($iso)->atDate(LocalDate::parse(self::DATE)));
     }
 
+    /**
+     * @dataProvider endTime
+     */
+    public function testEndTime(string $iso, string $expected): void
+    {
+        self::assertSame($expected, (string) LocalTimeInterval::parse($iso)->endTime());
+    }
+
+    /**
+     * @return iterable<mixed>
+     */
+    public function endTime(): iterable
+    {
+        yield 'No movement' => ['12:00/PT0S', '12:00'];
+        yield 'No lap' => ['12:00/PT2H', '14:00'];
+        yield 'Perfect lap' => ['12:00/PT24H', '12:00'];
+        yield 'More than a lap' => ['12:00/PT26H', '14:00'];
+        yield 'Many laps' => ['12:00/PT3264H', '12:00'];
+    }
+
     public function testToString(): void
     {
-        $localTimeInterval = LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
+        $hourRange = LocalTimeInterval::between(LocalTime::parse('12:34'), Duration::ofHours(2)->plusMinutes(30));
 
-        self::assertSame('12:34/PT2H30M', (string) $localTimeInterval);
-        self::assertSame((string) $localTimeInterval, $localTimeInterval->toString());
+        self::assertSame('12:34/PT2H30M', (string) $hourRange);
+        self::assertSame((string) $hourRange, $hourRange->toString());
     }
 
     /*
