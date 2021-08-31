@@ -48,11 +48,11 @@ final class LocalDateTimeIntervalTest extends TestCase
     {
         self::assertSame(
             '2020-01-01T00:00/2020-01-02T00:00',
-            (string) LocalDateTimeInterval::day(LocalDate::parse('2020-01-01'))
+            (string) LocalDateTimeInterval::day(LocalDate::parse('2020-01-01')),
         );
         self::assertSame(
             '2020-01-01T00:00/2020-01-02T00:00',
-            (string) LocalDateTimeInterval::day(LocalDateTime::parse('2020-01-01T12:00:00'))
+            (string) LocalDateTimeInterval::day(LocalDateTime::parse('2020-01-01T12:00:00')),
         );
     }
 
@@ -134,7 +134,7 @@ final class LocalDateTimeIntervalTest extends TestCase
     {
         self::assertSame(
             (string) Duration::parse('P29DT9H15M'),
-            (string) LocalDateTimeInterval::parse('2014-01-01T21:45/2014-01-31T07:00')->getDuration()
+            (string) LocalDateTimeInterval::parse('2014-01-01T21:45/2014-01-31T07:00')->getDuration(),
         );
     }
 
@@ -179,9 +179,9 @@ final class LocalDateTimeIntervalTest extends TestCase
             $expectedCount,
             iterator_to_array(
                 $interval->iterate(
-                    $strPeriod ? Period::parse($strPeriod) : Duration::parse($strDuration)
-                )
-            )
+                    $strPeriod ? Period::parse($strPeriod) : Duration::parse($strDuration),
+                ),
+            ),
         );
     }
 
@@ -216,7 +216,7 @@ final class LocalDateTimeIntervalTest extends TestCase
         $interval = LocalDateTimeInterval::parse($interval);
         $slices = map(
             iterator_to_array($interval->slice($durationOrPeriod)),
-            static fn (LocalDateTimeInterval $slice): string => $slice->toString()
+            static fn (LocalDateTimeInterval $slice): string => $slice->toString(),
         );
         self::assertSame($expected, $slices);
     }
@@ -274,7 +274,7 @@ final class LocalDateTimeIntervalTest extends TestCase
 
         self::assertSame(
             $start . '/' . $end,
-            (string) LocalDateTimeInterval::parse('2014-01-10T00:00/' . $end)->withStart(LocalDateTime::parse($start))
+            (string) LocalDateTimeInterval::parse('2014-01-10T00:00/' . $end)->withStart(LocalDateTime::parse($start)),
         );
     }
 
@@ -285,7 +285,7 @@ final class LocalDateTimeIntervalTest extends TestCase
 
         self::assertSame(
             $start . '/' . $end,
-            (string) LocalDateTimeInterval::parse($start . '/2014-01-10T00:00')->withEnd(LocalDateTime::parse($end))
+            (string) LocalDateTimeInterval::parse($start . '/2014-01-10T00:00')->withEnd(LocalDateTime::parse($end)),
         );
     }
 
@@ -684,8 +684,8 @@ final class LocalDateTimeIntervalTest extends TestCase
         self::assertSame(
             $expected,
             (string) LocalDateTimeInterval::containerOf(...map($input, static fn (string $timeRange): LocalDateTimeInterval
-                => LocalDateTimeInterval::parse($timeRange)
-            ))
+                => LocalDateTimeInterval::parse($timeRange),
+            )),
         );
     }
 
@@ -733,9 +733,9 @@ final class LocalDateTimeIntervalTest extends TestCase
             $expected,
             (string) LocalDateTimeInterval::parse($iso)->expand(
                 ...map($others, static fn (?string $timeRange): ?LocalDateTimeInterval
-                    => null !== $timeRange ? LocalDateTimeInterval::parse($timeRange) : null
-                )
-            )
+                    => null !== $timeRange ? LocalDateTimeInterval::parse($timeRange) : null,
+                ),
+            ),
         );
     }
 
@@ -842,7 +842,7 @@ final class LocalDateTimeIntervalTest extends TestCase
     public function testDays(string $input, array $expected): void
     {
         self::assertSame($expected, map(LocalDateTimeInterval::parse($input)->days(), static fn (LocalDate $day): string
-            => (string) $day
+            => (string) $day,
         ));
     }
 
@@ -890,7 +890,7 @@ final class LocalDateTimeIntervalTest extends TestCase
     {
         static::assertSame(
             $expected,
-            (string) LocalDateTimeInterval::parse($input)->getInclusiveEnd()
+            (string) LocalDateTimeInterval::parse($input)->getInclusiveEnd(),
         );
     }
 
