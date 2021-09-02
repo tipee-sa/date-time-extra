@@ -40,6 +40,20 @@ final class LocalTimeInterval implements JsonSerializable, Stringable
     }
 
     /*
+     * Accessors
+     */
+
+    public function startTime(): LocalTime
+    {
+        return $this->timepoint;
+    }
+
+    public function duration(): Duration
+    {
+        return $this->duration;
+    }
+
+    /*
      * Named constructors
      */
 
@@ -82,6 +96,14 @@ final class LocalTimeInterval implements JsonSerializable, Stringable
         $start = $this->timepoint->atDate($date);
 
         return LocalDateTimeInterval::between($start, $start->plusDuration($this->duration));
+    }
+
+    /*
+     * This method only returns the "clock end time" (no matter the number of laps). Use with caution.
+     */
+    public function endTime(): LocalTime
+    {
+        return $this->timepoint->plusDuration($this->duration);
     }
 
     public function toString(): string
