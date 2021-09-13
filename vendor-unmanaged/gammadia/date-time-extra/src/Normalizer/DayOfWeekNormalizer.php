@@ -8,7 +8,7 @@ use Brick\DateTime\DayOfWeek;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use function Gammadia\Collections\Functional\mapWithKeys;
+use function Gammadia\Collections\Functional\collectWithKeys;
 
 final class DayOfWeekNormalizer implements NormalizerInterface, DenormalizerInterface
 {
@@ -19,7 +19,7 @@ final class DayOfWeekNormalizer implements NormalizerInterface, DenormalizerInte
 
     public function __construct()
     {
-        $this->daysOfWeek = mapWithKeys(DayOfWeek::all(), fn (DayOfWeek $dayOfWeek): iterable
+        $this->daysOfWeek = collectWithKeys(DayOfWeek::all(), fn (DayOfWeek $dayOfWeek): iterable
             => yield $this->normalize($dayOfWeek) => $dayOfWeek,
         );
     }
