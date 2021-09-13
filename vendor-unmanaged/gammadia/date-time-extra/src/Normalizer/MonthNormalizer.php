@@ -8,7 +8,7 @@ use Brick\DateTime\Month;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use function Gammadia\Collections\Functional\mapWithKeys;
+use function Gammadia\Collections\Functional\collectWithKeys;
 
 final class MonthNormalizer implements NormalizerInterface, DenormalizerInterface
 {
@@ -19,7 +19,7 @@ final class MonthNormalizer implements NormalizerInterface, DenormalizerInterfac
 
     public function __construct()
     {
-        $this->months = mapWithKeys(Month::getAll(), fn (Month $month): iterable
+        $this->months = collectWithKeys(Month::getAll(), fn (Month $month): iterable
             => yield $this->normalize($month) => $month,
         );
     }
