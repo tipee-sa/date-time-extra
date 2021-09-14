@@ -11,6 +11,7 @@ use Gammadia\DateTimeExtra\LocalDateInterval;
 use Gammadia\DateTimeExtra\LocalDateTimeInterval;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use function Gammadia\Collections\Functional\map;
 
 final class LocalDateIntervalTest extends TestCase
@@ -76,7 +77,7 @@ final class LocalDateIntervalTest extends TestCase
         self::assertSame(731, $this->interval('2009|2011')->getLengthInDays());
         self::assertSame(732, $this->interval('2012|2014')->getLengthInDays());
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->interval('----|2009')->getLengthInDays();
     }
 

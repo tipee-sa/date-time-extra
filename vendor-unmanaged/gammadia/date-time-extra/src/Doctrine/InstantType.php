@@ -8,6 +8,7 @@ use Brick\DateTime\Instant;
 use Brick\DateTime\LocalDateTime;
 use Brick\DateTime\TimeZone;
 use Brick\DateTime\ZonedDateTime;
+use DateTime;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 
@@ -35,7 +36,7 @@ final class InstantType extends Type
     public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?Instant
     {
         if ($value) {
-            return LocalDateTime::fromDateTime(new \DateTime($value))
+            return LocalDateTime::fromDateTime(new DateTime($value))
                 ->atTimeZone(TimeZone::utc())
                 ->getInstant();
         }
