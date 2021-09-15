@@ -107,8 +107,8 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         $ends = map($localDateIntervals, static fn (self $localDateInterval): ?LocalDate => $localDateInterval->getEnd());
 
         return self::between(
-            contains($starts, value: null, strict: true) ? null : LocalDate::minOf(...$starts),
-            contains($ends, value: null, strict: true) ? null : LocalDate::maxOf(...$ends),
+            contains($starts, value: null) ? null : LocalDate::minOf(...$starts),
+            contains($ends, value: null) ? null : LocalDate::maxOf(...$ends),
         );
     }
 
