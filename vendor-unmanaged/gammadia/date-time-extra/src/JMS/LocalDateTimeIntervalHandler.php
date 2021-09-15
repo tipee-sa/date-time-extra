@@ -39,18 +39,22 @@ final class LocalDateTimeIntervalHandler implements SubscribingHandlerInterface
         ];
     }
 
-    public function serializeToJson(JsonSerializationVisitor $visitor, LocalDateTimeInterval $interval): string
+    public function serializeToJson(JsonSerializationVisitor $visitor, ?LocalDateTimeInterval $timeRange): ?string
     {
-        return $interval->toString();
+        return null !== $timeRange ? (string) $timeRange : null;
     }
 
-    public function deserializeFromJson(JsonDeserializationVisitor $visitor, mixed $interval): LocalDateTimeInterval
+    public function deserializeFromJson(JsonDeserializationVisitor $visitor, null|string $timeRange): ?LocalDateTimeInterval
     {
+        if (null === $timeRange) {
+            return null;
+        }
+
         try {
-            return LocalDateTimeInterval::parse($interval);
+            return LocalDateTimeInterval::parse($timeRange);
         } catch (IntervalParseException | RuntimeException $throwable) {
             throw new RuntimeException(
-                sprintf('Invalid interval: "%s"', $interval),
+                sprintf('Invalid time range: "%s"', $timeRange),
                 HttpStatus::HTTP_BAD_REQUEST,
                 $throwable,
             );
