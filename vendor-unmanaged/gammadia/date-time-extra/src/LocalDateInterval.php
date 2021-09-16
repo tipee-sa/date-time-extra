@@ -315,7 +315,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
     /**
      * Yields a copy of this interval with given start time.
      */
-    public function withStart(LocalDate $startDate): self
+    public function withStart(?LocalDate $startDate): self
     {
         return self::between($startDate, $this->end);
     }
@@ -323,7 +323,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
     /**
      * Yields a copy of this interval with given end time.
      */
-    public function withEnd(LocalDate $endDate): self
+    public function withEnd(?LocalDate $endDate): self
     {
         return self::between($this->start, $endDate);
     }
