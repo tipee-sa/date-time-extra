@@ -37,4 +37,9 @@ final class DurationType extends Type
     {
         return 'duration';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }

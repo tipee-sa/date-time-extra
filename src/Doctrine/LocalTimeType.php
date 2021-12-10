@@ -28,4 +28,9 @@ final class LocalTimeType extends Type
     {
         return 'local_time';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }

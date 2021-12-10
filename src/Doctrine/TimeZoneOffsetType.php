@@ -31,4 +31,9 @@ final class TimeZoneOffsetType extends Type
     {
         return 'timezone_offset_type';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }
