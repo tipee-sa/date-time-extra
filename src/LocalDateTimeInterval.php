@@ -25,10 +25,10 @@ use function Gammadia\Collections\Functional\map;
 final class LocalDateTimeInterval implements JsonSerializable, Stringable
 {
     private function __construct(
-        #[ORM\Column(type: 'local_datetime')]
+        #[ORM\Column(type: 'local_datetime', nullable: true)]
         private ?LocalDateTime $start,
 
-        #[ORM\Column(type: 'local_datetime')]
+        #[ORM\Column(type: 'local_datetime', nullable: true)]
         private ?LocalDateTime $end,
     ) {
         Assert::false($start && $end && $start->isAfter($end), sprintf('Start after end: %s / %s', $start, $end));
