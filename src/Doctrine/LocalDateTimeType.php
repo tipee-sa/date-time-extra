@@ -36,4 +36,9 @@ final class LocalDateTimeType extends Type
     {
         return 'local_datetime';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }

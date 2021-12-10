@@ -28,4 +28,9 @@ final class LocalDateType extends Type
     {
         return 'local_date';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }

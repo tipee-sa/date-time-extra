@@ -40,4 +40,9 @@ final class TimeZoneType extends Type
     {
         return 'timezone';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }

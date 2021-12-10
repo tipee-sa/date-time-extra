@@ -48,4 +48,9 @@ final class InstantType extends Type
     {
         return 'instant';
     }
+
+    public function requiresSQLCommentHint(AbstractPlatform $platform): bool
+    {
+        return true;
+    }
 }
