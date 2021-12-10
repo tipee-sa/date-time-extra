@@ -30,7 +30,7 @@ final class LocalDateIntervalNormalizer implements NormalizerInterface, Denormal
         try {
             return LocalDateInterval::parse($data);
         } catch (DateTimeException $e) {
-            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type));
+            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type), 0, $e);
         }
     }
 
