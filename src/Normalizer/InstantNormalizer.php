@@ -31,7 +31,7 @@ final class InstantNormalizer implements NormalizerInterface, DenormalizerInterf
         try {
             return ZonedDateTime::parse($data)->getInstant();
         } catch (DateTimeException $e) {
-            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type));
+            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type), 0, $e);
         }
     }
 

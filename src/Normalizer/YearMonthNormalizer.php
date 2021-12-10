@@ -30,7 +30,7 @@ final class YearMonthNormalizer implements NormalizerInterface, DenormalizerInte
         try {
             return YearMonth::parse($data);
         } catch (DateTimeException $e) {
-            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type));
+            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type), 0, $e);
         }
     }
 

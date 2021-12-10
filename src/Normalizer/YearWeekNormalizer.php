@@ -32,9 +32,9 @@ final class YearWeekNormalizer implements NormalizerInterface, DenormalizerInter
         try {
             return YearWeek::of(...map((array) explode('-W', (string) $data, 2), static fn (string $part): int => (int) $part));
         } catch (DateTimeException $e) {
-            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type));
-        } catch (Throwable) {
-            throw new NotNormalizableValueException('Invalid format for year week.');
+            throw new NotNormalizableValueException(sprintf('%s (%s)', $e->getMessage(), $type), 0, $e);
+        } catch (Throwable $e) {
+            throw new NotNormalizableValueException('Invalid format for year week.', 0, $e);
         }
     }
 
