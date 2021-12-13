@@ -9,6 +9,7 @@ use Brick\DateTime\LocalTime;
 use Brick\DateTime\Period;
 use Brick\DateTime\YearWeek;
 use Doctrine\ORM\Mapping as ORM;
+use Gammadia\DateTimeExtra\Exceptions\Assert\Assert as DomainAssert;
 use Gammadia\DateTimeExtra\Exceptions\IntervalParseException;
 use JsonSerializable;
 use RuntimeException;
@@ -29,7 +30,7 @@ final class LocalDateInterval implements JsonSerializable, Stringable
         #[ORM\Column(type: 'local_date')]
         private ?LocalDate $end,
     ) {
-        Assert::false($start && $end && $start->isAfter($end), sprintf('Start after end: %s / %s', $start, $end));
+        DomainAssert::false($start && $end && $start->isAfter($end), sprintf('Start after end: %s / %s', $start, $end));
     }
 
     public function __toString(): string
