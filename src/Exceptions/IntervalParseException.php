@@ -7,7 +7,7 @@ namespace Gammadia\DateTimeExtra\Exceptions;
 use RuntimeException;
 use Throwable;
 
-final class IntervalParseException extends RuntimeException
+final class IntervalParseException extends RuntimeException implements ExceptionInterface
 {
     public static function uniqueDuration(string $textToParse): self
     {
